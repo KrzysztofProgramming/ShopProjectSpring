@@ -10,7 +10,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 import java.util.Collection;
 
 
-@Document(value = "products_database")
+@Document(value = "products")
 @Data
 @AllArgsConstructor
 public class ShopProduct {
@@ -30,4 +30,6 @@ public class ShopProduct {
     @Indexed
     @TextIndexed(weight = 2.f)
     private Collection<String> types;
+
+    private Integer inStore;
 }

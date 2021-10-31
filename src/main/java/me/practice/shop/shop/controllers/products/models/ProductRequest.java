@@ -24,4 +24,8 @@ public class ProductRequest {
 
     @NotNull
     private Collection<String> types;
+
+    @PositiveOrZero
+    private Integer inStore;
+
 }

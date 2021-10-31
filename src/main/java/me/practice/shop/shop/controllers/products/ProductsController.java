@@ -3,12 +3,10 @@ package me.practice.shop.shop.controllers.products;
 import me.practice.shop.shop.controllers.products.models.GetProductsParams;
 import me.practice.shop.shop.controllers.products.models.GetProductsResponse;
 import me.practice.shop.shop.controllers.products.models.ProductRequest;
-import me.practice.shop.shop.database.files.ProductImage;
-import me.practice.shop.shop.database.files.ProductImageDatabase;
+import me.practice.shop.shop.database.files.DatabaseImage;
 import me.practice.shop.shop.database.products.ProductsDatabase;
 import me.practice.shop.shop.models.ErrorResponse;
 import me.practice.shop.shop.models.ShopProduct;
-import me.practice.shop.shop.utils.GzipUtils;
 import me.practice.shop.shop.utils.MediaTypeUtils;
 import org.bson.types.Binary;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,7 +35,8 @@ public class ProductsController {
     private ProductsDatabase productsDatabase;
 
     @Autowired
-    private ProductImageDatabase productImageDatabase;
+    private ProductsImagesRepository productsImagesRepository;
+
 
     @GetMapping(value = "getAll")
     public ResponseEntity<?> getProducts(@Valid GetProductsParams params) {
@@ -59,15 +58,12 @@ public class ProductsController {
     public ResponseEntity<?> addProduct(@Valid @RequestBody ProductRequest request) {
         return ResponseEntity.ok().body(productsDatabase.insert(this.newProduct(request)));
     }
-
+//
 //    @PreAuthorize("hasAuthority('PRODUCTS_MODIFY')")
-    @GetMapping(value = "test")
-    public ResponseEntity<?> testApi(@ModelAttribute GetProductsParams params){
-        System.out.println(params);
-        Page<ShopProduct> result = this.productsDatabase.findByParams(params);
-        return ResponseEntity.ok(new GetProductsResponse(result.getNumber(), result.getTotalPages(),
-                result.getTotalElements(), result.getContent()));
-    }
+//    @PostMapping(value = "test")
+//    public ResponseEntity<?> testApi(@RequestParam("file") MultipartFile file) {
+//        return ResponseEntity.ok().build();
+//    }
 
     @PreAuthorize("hasAuthority('PRODUCTS_MODIFY')")
     @PutMapping(value = "updateProduct/{id}")
@@ -89,7 +85,7 @@ public class ProductsController {
     @DeleteMapping(value = "deleteProduct/{id}")
     public ResponseEntity<?> deleteProduct(@PathVariable String id){
         productsDatabase.deleteById(id);
-        this.productImageDatabase.deleteById(id);
+        this.productsImagesRepository.deleteProductImages(id);
         return ResponseEntity.ok().build();
     }
 
@@ -97,15 +93,14 @@ public class ProductsController {
     @PutMapping("uploadProductImage/{id}")
     public ResponseEntity<?> uploadProductImage(@PathVariable("id") String productId,
                                                 @RequestParam("file") MultipartFile file) throws IOException {
-//        return ResponseEntity.badRequest().build();
         if(!productsDatabase.existsById(productId)){
             return ResponseEntity.badRequest().body(this.productNotExistsInfo);
         }
-        if(!MediaTypeUtils.isImageOK(file)){
+        String fileType = MediaTypeUtils.detectFileType(file.getBytes());
+        if(!MediaTypeUtils.isImageTypeOK(fileType)){
             return ResponseEntity.badRequest().body(new ErrorResponse("Zły typ pliku"));
         }
-        productImageDatabase.save(new ProductImage(productId,
-                new Binary(GzipUtils.compress(file.getBytes()))));
+        productsImagesRepository.saveAndScale(new DatabaseImage(productId, fileType, new Binary(file.getBytes())));
         return ResponseEntity.ok().build();
     }
 
@@ -114,19 +109,27 @@ public class ProductsController {
     @PreAuthorize("hasAuthority('PRODUCTS_MODIFY')")
     @DeleteMapping("deleteProductImage/{id}")
     public ResponseEntity<?> deleteProductImage(@PathVariable("id") String productId){
-        productImageDatabase.deleteById(productId);
+        this.productsImagesRepository.deleteProductImages(productId);
         return ResponseEntity.ok().build();
     }
 
-    @GetMapping("downloadProductImage/{id}")
-    public ResponseEntity<?> downloadProductImage(@PathVariable("id") String productId) throws IOException {
-        Optional<ProductImage> image = productImageDatabase.findById(productId);
+    @GetMapping("downloadProductOriginalImage/{id}")
+    public ResponseEntity<?> downloadOriginalProductImage(@PathVariable("id") String productId) {
+       return this.downloadProductImage(this.productsImagesRepository.getOriginalImage(productId));
+    }
+
+    @GetMapping("downloadProductSmallImage/{id}")
+    public ResponseEntity<?> downloadSmallProductImage(@PathVariable("id") String productId) {
+        return this.downloadProductImage(this.productsImagesRepository.getSmallImage(productId));
+
+    }
+
+    private ResponseEntity<?> downloadProductImage(Optional<DatabaseImage> image){
         if(image.isEmpty())
             return ResponseEntity.badRequest().body(new ErrorResponse("Ten produkt nie ma obrazu"));
-        byte[] decompressedData = GzipUtils.decompress(image.get().getImage().getData());
         return ResponseEntity.ok()
-                .contentType(MediaType.valueOf(MediaTypeUtils.detectFileType(decompressedData)))
-                .body(decompressedData);
+                .contentType(MediaType.valueOf(image.get().getMediaType()))
+                .body(image.get().getImage().getData());
     }
 
     private ShopProduct newProduct(ProductRequest request){
@@ -135,7 +138,7 @@ public class ProductsController {
 
     private ShopProduct fromRequest(String id, ProductRequest request) {
         return new ShopProduct(id, request.getName(),Math.floor(request.getPrice() * 100) / 100, request.getDescription(),
-                request.getTypes().stream().map(String::toUpperCase).collect(Collectors.toList()));
+                request.getTypes().stream().map(String::toUpperCase).collect(Collectors.toList()), request.getInStore());
     }
 
 }

@@ -1,8 +1,6 @@
 package me.practice.shop.shop.controllers.users;
 
-import me.practice.shop.shop.controllers.users.models.GetUsersParams;
-import me.practice.shop.shop.controllers.users.models.UserRequest;
-import me.practice.shop.shop.controllers.users.models.UserResponse;
+import me.practice.shop.shop.controllers.users.models.*;
 import me.practice.shop.shop.database.users.UsersDatabase;
 import me.practice.shop.shop.models.ErrorResponse;
 import me.practice.shop.shop.models.ShopUser;
@@ -11,11 +9,14 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
 import java.util.Optional;
+import java.util.function.Function;
 
 @RestController
 @CrossOrigin(origins = "*", maxAge = 3600)
@@ -79,6 +80,48 @@ public class UsersController {
             return ResponseEntity.badRequest().body(new ErrorResponse("No user with id: " + id));
         usersDatabase.deleteById(id);
         return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("profile/info")
+    public ResponseEntity<?> getProfile(){
+        return this.ifUserLoggedIn(user -> ResponseEntity
+                .ok(new ProfileResponse(user.getUsername(), user.getEmail())));
+    }
+
+    @PutMapping("profile/update")
+    public ResponseEntity<?> modifyProfile(@Valid @RequestBody ProfileRequest profileRequest){
+        return this.ifUserLoggedIn(user->{
+            System.out.println(profileRequest);
+            if(this.usersDatabase.existsByEmail(profileRequest.getEmail())) {
+                return ResponseEntity.badRequest().body(new ErrorResponse("Ten email jest już zajęty"));
+            }
+            user.setEmail(profileRequest.getEmail());
+            this.usersDatabase.save(user);
+            return ResponseEntity.ok(new ProfileResponse(user.getUsername(), user.getEmail()));
+        });
+    }
+
+    @PutMapping("profile/updatePassword")
+    public ResponseEntity<?> updatePassword(@Valid @RequestBody PasswordRequest passwordRequest){
+        return this.ifUserLoggedIn(user->{
+            if(!encoder.matches(passwordRequest.getOldPassword(), user.getPassword()))
+                return ResponseEntity.badRequest().build();
+            user.setPassword(encoder.encode(passwordRequest.getNewPassword()));
+            this.usersDatabase.save(user);
+            return ResponseEntity.ok().build();
+        });
+    }
+
+    private ResponseEntity<?> ifUserLoggedIn(Function<ShopUser, ResponseEntity<?>> fn){
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if(auth==null){
+            return ResponseEntity.badRequest().body(new ErrorResponse("User not logged in"));
+        }
+        Optional<ShopUser> user = this.usersDatabase.findById((String) auth.getPrincipal());
+        if(user.isEmpty()) {
+            return ResponseEntity.badRequest().body(new ErrorResponse("User not exists"));
+        }
+        return fn.apply(user.get());
     }
 
     private UserResponse toUserResponse(ShopUser user){

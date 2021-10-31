@@ -8,9 +8,10 @@ import org.springframework.data.mongodb.core.mapping.Document;
 
 @Data
 @AllArgsConstructor
-@Document("products_images_database")
-public class ProductImage {
+@Document
+public class DatabaseImage {
     @Id
-    private String productId;
+    private String id;
+    private String mediaType;
     private Binary image;
 }

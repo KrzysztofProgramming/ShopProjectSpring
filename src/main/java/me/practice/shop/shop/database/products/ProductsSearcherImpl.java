@@ -35,14 +35,18 @@ public class ProductsSearcherImpl<T> implements ProductsSearcher {
         q.with(pageable);
 
         Criteria c = Criteria.where("price");
+        boolean addCriteria = false;
         if(p.getMinPrice() >= 0){
             c.gte(p.getMinPrice());
-            q.addCriteria(c);
+            addCriteria = true;
         }
         if(p.getMaxPrice() >= 0){
             c.lte(p.getMaxPrice());
-            q.addCriteria(c);
+            addCriteria = true;
         }
+        if(addCriteria)
+            q.addCriteria(c);
+
 
         if(!p.getTypes().isEmpty()){
             q.addCriteria(Criteria.where("types").elemMatch(new Criteria().in(p.getTypes())));

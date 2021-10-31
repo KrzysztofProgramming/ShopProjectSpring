@@ -82,7 +82,25 @@
 			<artifactId>tika-core</artifactId>
 			<version>1.27</version>
 		</dependency>
+		<dependency>
+			<groupId>org.imgscalr</groupId>
+			<artifactId>imgscalr-lib</artifactId>
+			<version>4.2</version>
+		</dependency>
+<!--		<dependency>-->
+<!--			<groupId>com.drewnoakes</groupId>-->
+<!--			<artifactId>metadata-extractor</artifactId>-->
+<!--			<version>2.16.0</version>-->
+<!--		</dependency>-->
+		<!-- https://mvnrepository.com/artifact/org.apache.commons/commons-imaging -->
+		<dependency>
+			<groupId>org.apache.commons</groupId>
+			<artifactId>commons-imaging</artifactId>
+			<version>1.0-alpha2</version>
+		</dependency>
+
 	</dependencies>
+
 
 	<build>
 		<plugins>
