@@ -50,6 +50,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .antMatchers("/api/auth/logout").authenticated()
                 .antMatchers("/api/auth/**").permitAll()
                 .antMatchers(HttpMethod.GET, "/api/products/**").permitAll()
+                .antMatchers("/api/users/cart/**").permitAll()
                 .anyRequest().authenticated()
                 .and().cors().and()
                 .exceptionHandling().authenticationEntryPoint(jwtAuthEntryPoint);

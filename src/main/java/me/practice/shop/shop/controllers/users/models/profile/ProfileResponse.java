@@ -1,4 +1,4 @@
-package me.practice.shop.shop.controllers.users.models;
+package me.practice.shop.shop.controllers.users.models.profile;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

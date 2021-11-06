@@ -17,6 +17,7 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
 
+@SuppressWarnings("unused")
 public class ProductsSearcherImpl<T> implements ProductsSearcher {
     @Autowired
     private MongoTemplate mongoTemplate;
@@ -25,7 +26,7 @@ public class ProductsSearcherImpl<T> implements ProductsSearcher {
     public Page<ShopProduct> findByParams(GetProductsParams p) {
         Pageable pageable = PageRequest.of(p.getPageNumber() - 1, p.getPageSize());
         Query q;
-
+        //phrase
         if(Strings.isNotEmpty(p.getSearchPhrase())){
             q = new TextQuery(p.getSearchPhrase()).sortByScore();
         }
@@ -34,6 +35,7 @@ public class ProductsSearcherImpl<T> implements ProductsSearcher {
         }
         q.with(pageable);
 
+        //price
         Criteria c = Criteria.where("price");
         boolean addCriteria = false;
         if(p.getMinPrice() >= 0){
@@ -47,7 +49,21 @@ public class ProductsSearcherImpl<T> implements ProductsSearcher {
         if(addCriteria)
             q.addCriteria(c);
 
+        //inStock
+        c = Criteria.where("inStock");
+        addCriteria = false;
+        if(p.getMinInStock() >= 0){
+            c.gte(p.getMinInStock());
+            addCriteria = true;
+        }
+        if(p.getMaxInStock() >= 0){
+            c.lte(p.getMaxInStock());
+            addCriteria = true;
+        }
+        if(addCriteria)
+            q.addCriteria(c);
 
+        //types
         if(!p.getTypes().isEmpty()){
             q.addCriteria(Criteria.where("types").elemMatch(new Criteria().in(p.getTypes())));
         }

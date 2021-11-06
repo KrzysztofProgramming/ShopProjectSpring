@@ -31,5 +31,6 @@ public class ShopProduct {
     @TextIndexed(weight = 2.f)
     private Collection<String> types;
 
-    private Integer inStore;
+    @Indexed
+    private Integer inStock;
 }

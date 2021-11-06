@@ -26,6 +26,6 @@ public class ProductRequest {
     private Collection<String> types;
 
     @PositiveOrZero
-    private Integer inStore;
+    private Integer inStock;
 
 }

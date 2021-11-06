@@ -37,10 +37,8 @@ public class ProductsController {
     @Autowired
     private ProductsImagesRepository productsImagesRepository;
 
-
     @GetMapping(value = "getAll")
     public ResponseEntity<?> getProducts(@Valid GetProductsParams params) {
-
         Page<ShopProduct> productPage = this.productsDatabase.findByParams(params);
         return ResponseEntity.ok(new GetProductsResponse(productPage.getNumber() + 1, productPage.getTotalPages(),
                 productPage.getTotalElements(), productPage.toList()));
@@ -58,23 +56,13 @@ public class ProductsController {
     public ResponseEntity<?> addProduct(@Valid @RequestBody ProductRequest request) {
         return ResponseEntity.ok().body(productsDatabase.insert(this.newProduct(request)));
     }
-//
-//    @PreAuthorize("hasAuthority('PRODUCTS_MODIFY')")
-//    @PostMapping(value = "test")
-//    public ResponseEntity<?> testApi(@RequestParam("file") MultipartFile file) {
-//        return ResponseEntity.ok().build();
-//    }
 
     @PreAuthorize("hasAuthority('PRODUCTS_MODIFY')")
     @PutMapping(value = "updateProduct/{id}")
     public ResponseEntity<?> updateProduct(@PathVariable String id, @Valid @RequestBody ProductRequest request) {
           Optional<ShopProduct> product =  productsDatabase.findById(id)
-                    .map(shopProduct -> {
-                        shopProduct.setName(request.getName());
-                        shopProduct.setPrice(request.getPrice());
-                        shopProduct.setDescription(request.getDescription());
-                        return productsDatabase.save(shopProduct);
-            });
+                    .map(shopProduct ->
+                            productsDatabase.save(this.fromRequest(shopProduct.getId(), request)));
           if(product.isEmpty())
               return ResponseEntity.badRequest().body(productNotExistsInfo);
 
@@ -121,7 +109,6 @@ public class ProductsController {
     @GetMapping("downloadProductSmallImage/{id}")
     public ResponseEntity<?> downloadSmallProductImage(@PathVariable("id") String productId) {
         return this.downloadProductImage(this.productsImagesRepository.getSmallImage(productId));
-
     }
 
     private ResponseEntity<?> downloadProductImage(Optional<DatabaseImage> image){
@@ -138,7 +125,7 @@ public class ProductsController {
 
     private ShopProduct fromRequest(String id, ProductRequest request) {
         return new ShopProduct(id, request.getName(),Math.floor(request.getPrice() * 100) / 100, request.getDescription(),
-                request.getTypes().stream().map(String::toUpperCase).collect(Collectors.toList()), request.getInStore());
+                request.getTypes().stream().map(String::toUpperCase).collect(Collectors.toList()), request.getInStock());
     }
 
 }

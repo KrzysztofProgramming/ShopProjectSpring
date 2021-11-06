@@ -1,9 +1,21 @@
 package me.practice.shop.shop.controllers.users;
 
-import me.practice.shop.shop.controllers.users.models.*;
+import me.practice.shop.shop.controllers.users.models.PasswordRequest;
+import me.practice.shop.shop.controllers.users.models.cart.SetCartProductRequest;
+import me.practice.shop.shop.controllers.users.models.cart.SetCartRequest;
+import me.practice.shop.shop.controllers.users.models.profile.ProfileRequest;
+import me.practice.shop.shop.controllers.users.models.profile.ProfileResponse;
+import me.practice.shop.shop.controllers.users.models.users.GetUsersParams;
+import me.practice.shop.shop.controllers.users.models.users.UserRequest;
+import me.practice.shop.shop.controllers.users.models.users.UserResponse;
+import me.practice.shop.shop.database.products.ProductsDatabase;
+import me.practice.shop.shop.database.shoppingCarts.ShoppingCartsRepository;
 import me.practice.shop.shop.database.users.UsersDatabase;
 import me.practice.shop.shop.models.ErrorResponse;
+import me.practice.shop.shop.models.ShopProduct;
 import me.practice.shop.shop.models.ShopUser;
+import me.practice.shop.shop.models.ShoppingCart;
+import me.practice.shop.shop.services.ShoppingCartsService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -15,8 +27,11 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
+import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 @RestController
 @CrossOrigin(origins = "*", maxAge = 3600)
@@ -28,6 +43,15 @@ public class UsersController {
 
     @Autowired
     private PasswordEncoder encoder;
+
+    @Autowired
+    private ShoppingCartsRepository cartsRepository;
+
+    @Autowired
+    private ProductsDatabase productsDatabase;
+
+    @Autowired
+    private ShoppingCartsService cartsService;
 
     @PreAuthorize("hasAuthority('USERS_GET')")
     @GetMapping(value = "byUsername/{id}")
@@ -112,14 +136,76 @@ public class UsersController {
         });
     }
 
+//    @GetMapping("cart/test")
+//    public ResponseEntity<?> addProductToCart(){
+//        return ResponseEntity.ok(this.cartsRepository.save(new ShoppingCart("siema",
+//                Map.of("produkt1", 10, "produkt2", 15),
+//                new Date(System.currentTimeMillis() + 1000 * 60 * 20))));
+////        return ResponseEntity.ok(this.cartsRepository.findById("33c2ddd8-9149-4e68-a3b1-6570ceba282f"));
+//
+//    }
+
+    @PutMapping("cart/setProduct")
+    public ResponseEntity<?> setProductInCart(@Valid @RequestBody SetCartProductRequest request){
+        return this.ifUserLoggedIn(user->{
+            ShoppingCart cart = cartsService.getUserShoppingCart(user.getUsername());
+            int previousAmount = cart.getItems().getOrDefault(request.getProductId(), 0);
+
+            Optional<ShopProduct> product = this.productsDatabase.findById(request.getProductId());
+            if(product.isEmpty())
+                return ResponseEntity.badRequest().body(new ErrorResponse("Taki produkt nie istnieje"));
+            if(product.get().getInStock() + previousAmount < request.getAmount())
+                return ResponseEntity.badRequest().body(new ErrorResponse("Podana ilość nie jest już dostępna"));
+            product.get().setInStock(product.get().getInStock() - request.getAmount() + previousAmount);
+            cart.getItems().put(request.getProductId(), request.getAmount());
+            this.productsDatabase.save(product.get());
+            return ResponseEntity.ok(this.cartsRepository.save(cart));
+        });
+    }
+
+    @PutMapping("cart/setCart")
+    public ResponseEntity<?> setCart(@Valid @RequestBody SetCartRequest request){
+        return this.ifUserLoggedIn(user->{
+            ShoppingCart cart = this.cartsService.cartFromRequest(user.getUsername(), request.getProducts());
+            List<String> productIds = cart.getItems().keySet().stream().toList();
+            Iterable<ShopProduct> products = this.productsDatabase.findAllById(productIds);
+
+            if(productIds.size() != StreamSupport.stream(products.spliterator(), false).count())
+                return ResponseEntity.badRequest().body(new ErrorResponse("Podano błędny produkt"));
+
+            ShoppingCart oldCart = this.cartsService.getUserShoppingCart(user.getUsername());
+
+            if(!StreamSupport.stream(products.spliterator(), false).allMatch(product->
+                    !cart.getItems().containsKey(product.getId()) ||
+                    product.getInStock() + oldCart.getItems().getOrDefault(product.getId(), 0)
+                    >= cart.getItems().get(product.getId()))
+            ) {
+                return ResponseEntity.badRequest().body(new ErrorResponse("Nie wszystkie produkty są dostępne"));
+            }
+
+            List<ShopProduct> updateProducts = StreamSupport.stream(products.spliterator(), false)
+                    .peek(product-> product.setInStock(product.getInStock() - cart.getItems().get(product.getId())
+                            + oldCart.getItems().getOrDefault(product.getId(), 0)))
+                    .collect(Collectors.toList());
+
+            this.productsDatabase.saveAll(updateProducts);
+            return ResponseEntity.ok(this.cartsRepository.save(cart));
+        });
+    }
+
+    @GetMapping("cart/getCart")
+    public ResponseEntity<?> getCart(){
+        return this.ifUserLoggedIn(user-> ResponseEntity.ok(cartsService.getUserShoppingCart(user.getUsername())));
+    }
+
     private ResponseEntity<?> ifUserLoggedIn(Function<ShopUser, ResponseEntity<?>> fn){
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if(auth==null){
-            return ResponseEntity.badRequest().body(new ErrorResponse("User not logged in"));
+            return ResponseEntity.badRequest().body(new ErrorResponse("Użytkownik niezalogowany"));
         }
         Optional<ShopUser> user = this.usersDatabase.findById((String) auth.getPrincipal());
         if(user.isEmpty()) {
-            return ResponseEntity.badRequest().body(new ErrorResponse("User not exists"));
+            return ResponseEntity.badRequest().body(new ErrorResponse("Użytkownik nie istnieje"));
         }
         return fn.apply(user.get());
     }
@@ -148,5 +234,7 @@ public class UsersController {
         return new ShopUser(r.getUsername(), r.getEmail(),
                 encoder.encode(r.getPassword()),r.getRoles(), r.getAuthorities());
     }
+
+
 
 }
