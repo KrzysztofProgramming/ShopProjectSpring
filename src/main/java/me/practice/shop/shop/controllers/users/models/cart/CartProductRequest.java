@@ -10,7 +10,7 @@ import javax.validation.constraints.Positive;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class SetCartProductRequest {
+public class CartProductRequest {
     @NotBlank
     private String productId;
     @Positive

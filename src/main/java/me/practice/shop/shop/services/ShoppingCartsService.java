@@ -34,6 +34,15 @@ public class ShoppingCartsService {
                         new Date(System.currentTimeMillis() + expirationTime * 1000 * 60)));
     }
 
+    public ShoppingCart getAndRenew(String username){
+        return renewCart(this.getUserShoppingCart(username));
+    }
+
+    public ShoppingCart renewCart(ShoppingCart cart){
+        cart.setExpireDate(new Date(System.currentTimeMillis() + expirationTime * 1000 * 60));
+        return cart;
+    }
+
     public ShoppingCart cartFromRequest(String username, Map<String, Integer> products){
         return new ShoppingCart(username, products, new Date(System.currentTimeMillis() + expirationTime * 1000 * 60));
     }

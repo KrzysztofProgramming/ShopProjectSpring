@@ -18,10 +18,13 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.validation.Valid;
+import javax.validation.constraints.NotEmpty;
 import java.io.IOException;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 @RestController
 @CrossOrigin(origins = "http://localhost:4200", maxAge = 3600)
@@ -49,6 +52,12 @@ public class ProductsController {
         Optional<ShopProduct> product = productsDatabase.findById(id);
         return product.isPresent() ? ResponseEntity.ok(product)
                 : ResponseEntity.badRequest().body(productNotExistsInfo);
+    }
+
+    @GetMapping(value = "byIds")
+    public ResponseEntity<?> getProductsByIds(@RequestParam @Valid @NotEmpty List<String> ids){
+        Iterable<ShopProduct> products = productsDatabase.findAllById(ids);
+        return ResponseEntity.ok(StreamSupport.stream(products.spliterator(), false).collect(Collectors.toList()));
     }
 
     @PreAuthorize("hasAuthority('PRODUCTS_MODIFY')")

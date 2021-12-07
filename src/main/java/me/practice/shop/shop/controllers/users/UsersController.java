@@ -1,7 +1,7 @@
 package me.practice.shop.shop.controllers.users;
 
 import me.practice.shop.shop.controllers.users.models.PasswordRequest;
-import me.practice.shop.shop.controllers.users.models.cart.SetCartProductRequest;
+import me.practice.shop.shop.controllers.users.models.cart.CartProductRequest;
 import me.practice.shop.shop.controllers.users.models.cart.SetCartRequest;
 import me.practice.shop.shop.controllers.users.models.profile.ProfileRequest;
 import me.practice.shop.shop.controllers.users.models.profile.ProfileResponse;
@@ -146,20 +146,34 @@ public class UsersController {
 //    }
 
     @PutMapping("cart/setProduct")
-    public ResponseEntity<?> setProductInCart(@Valid @RequestBody SetCartProductRequest request){
+    public ResponseEntity<?> setProductInCart(@Valid @RequestBody CartProductRequest request){
         return this.ifUserLoggedIn(user->{
-            ShoppingCart cart = cartsService.getUserShoppingCart(user.getUsername());
-            int previousAmount = cart.getItems().getOrDefault(request.getProductId(), 0);
+            ShoppingCart cart = cartsService.getAndRenew(user.getUsername());
+            return this.modifyCartProduct(request, cart);
+        });
+    }
 
-            Optional<ShopProduct> product = this.productsDatabase.findById(request.getProductId());
-            if(product.isEmpty())
-                return ResponseEntity.badRequest().body(new ErrorResponse("Taki produkt nie istnieje"));
-            if(product.get().getInStock() + previousAmount < request.getAmount())
-                return ResponseEntity.badRequest().body(new ErrorResponse("Podana ilość nie jest już dostępna"));
-            product.get().setInStock(product.get().getInStock() - request.getAmount() + previousAmount);
-            cart.getItems().put(request.getProductId(), request.getAmount());
-            this.productsDatabase.save(product.get());
-            return ResponseEntity.ok(this.cartsRepository.save(cart));
+    private ResponseEntity<?> modifyCartProduct(CartProductRequest request, ShoppingCart cart){
+        int previousAmount = cart.getItems().getOrDefault(request.getProductId(), 0);
+
+        Optional<ShopProduct> product = this.productsDatabase.findById(request.getProductId());
+        if(product.isEmpty())
+            return ResponseEntity.badRequest().body(new ErrorResponse("Taki produkt nie istnieje"));
+        if(product.get().getInStock() + previousAmount < request.getAmount())
+            return ResponseEntity.badRequest().body(new ErrorResponse("Podana ilość nie jest już dostępna"));
+
+        product.get().setInStock(product.get().getInStock() - request.getAmount() + previousAmount);
+        cart.getItems().put(request.getProductId(), request.getAmount());
+        this.productsDatabase.save(product.get());
+        return ResponseEntity.ok(this.cartsRepository.save(cart));
+    }
+
+    @PutMapping("cart/addProduct")
+    public ResponseEntity<?> addProductToCart(@Valid @RequestBody CartProductRequest request){
+        return this.ifUserLoggedIn(user->{
+            ShoppingCart cart = cartsService.getAndRenew(user.getUsername());
+            return this.modifyCartProduct(new CartProductRequest(request.getProductId(), cart.getItems()
+                    .getOrDefault(request.getProductId(),0) + request.getAmount()), cart);
         });
     }
 
