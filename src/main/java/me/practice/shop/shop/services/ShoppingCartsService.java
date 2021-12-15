@@ -1,8 +1,8 @@
 package me.practice.shop.shop.services;
 
-import me.practice.shop.shop.database.products.ProductsDatabase;
+import me.practice.shop.shop.database.products.ProductsRepository;
 import me.practice.shop.shop.database.shoppingCarts.ShoppingCartsRepository;
-import me.practice.shop.shop.models.ShopProduct;
+import me.practice.shop.shop.models.BookProduct;
 import me.practice.shop.shop.models.ShoppingCart;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -26,7 +26,7 @@ public class ShoppingCartsService {
     private ShoppingCartsRepository cartsRepository;
 
     @Autowired
-    private ProductsDatabase productsDatabase;
+    private ProductsRepository productsRepository;
 
     public ShoppingCart getUserShoppingCart(String username){
         return this.cartsRepository.findById(username)
@@ -53,10 +53,10 @@ public class ShoppingCartsService {
         List<ShoppingCart> carts = cartsRepository.deleteByExpireDateLessThan(new Date());
         List<String> productsToUpdate = carts.stream()
                 .flatMap(item->item.getItems().keySet().stream()).collect(Collectors.toList());
-        List<ShopProduct> updatedProducts = StreamSupport.stream(this.productsDatabase.findAllById(productsToUpdate).spliterator(), false)
+        List<BookProduct> updatedProducts = StreamSupport.stream(this.productsRepository.findAllById(productsToUpdate).spliterator(), false)
                 .peek(product->product.setInStock(product.getInStock() + sumProductInStock(carts, product.getId())))
                 .collect(Collectors.toList());
-        this.productsDatabase.saveAll(updatedProducts);
+        this.productsRepository.saveAll(updatedProducts);
     }
 
     private int sumProductInStock(List<ShoppingCart> carts, String productId){

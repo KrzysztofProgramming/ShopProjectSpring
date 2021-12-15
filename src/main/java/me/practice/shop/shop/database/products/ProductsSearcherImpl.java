@@ -1,13 +1,15 @@
 package me.practice.shop.shop.database.products;
 
 import me.practice.shop.shop.controllers.products.models.GetProductsParams;
-import me.practice.shop.shop.models.ShopProduct;
+import me.practice.shop.shop.models.BookProduct;
 import org.apache.logging.log4j.util.Strings;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.aggregation.Aggregation;
+import org.springframework.data.mongodb.core.aggregation.GroupOperation;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.TextQuery;
@@ -23,7 +25,10 @@ public class ProductsSearcherImpl<T> implements ProductsSearcher {
     private MongoTemplate mongoTemplate;
 
     @Override
-    public Page<ShopProduct> findByParams(GetProductsParams p) {
+    public Page<BookProduct> findByParams(GetProductsParams p) {
+        GroupOperation operation = Aggregation.group("siema");
+
+
         Pageable pageable = PageRequest.of(p.getPageNumber() - 1, p.getPageSize());
         Query q;
         //phrase
@@ -69,8 +74,8 @@ public class ProductsSearcherImpl<T> implements ProductsSearcher {
         }
 
 
-        return PageableExecutionUtils.getPage(mongoTemplate.find(q, ShopProduct.class), pageable,
-                () -> mongoTemplate.count(Query.of(q).limit(-1).skip(-1), ShopProduct.class));
+        return PageableExecutionUtils.getPage(mongoTemplate.find(q, BookProduct.class), pageable,
+                () -> mongoTemplate.count(Query.of(q).limit(-1).skip(-1), BookProduct.class));
     }
 
     private Date maxTime(Date d){

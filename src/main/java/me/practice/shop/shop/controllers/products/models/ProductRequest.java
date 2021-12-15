@@ -26,7 +26,7 @@ public class ProductRequest {
     private Collection<String> types;
 
     @NotNull
-    private Collection<String> authors;
+    private Collection<AuthorRequest> authors;
 
     @PositiveOrZero
     private Integer inStock;

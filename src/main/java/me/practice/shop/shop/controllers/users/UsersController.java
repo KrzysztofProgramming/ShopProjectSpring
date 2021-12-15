@@ -8,11 +8,11 @@ import me.practice.shop.shop.controllers.users.models.profile.ProfileResponse;
 import me.practice.shop.shop.controllers.users.models.users.GetUsersParams;
 import me.practice.shop.shop.controllers.users.models.users.UserRequest;
 import me.practice.shop.shop.controllers.users.models.users.UserResponse;
-import me.practice.shop.shop.database.products.ProductsDatabase;
+import me.practice.shop.shop.database.products.ProductsRepository;
 import me.practice.shop.shop.database.shoppingCarts.ShoppingCartsRepository;
 import me.practice.shop.shop.database.users.UsersDatabase;
+import me.practice.shop.shop.models.BookProduct;
 import me.practice.shop.shop.models.ErrorResponse;
-import me.practice.shop.shop.models.ShopProduct;
 import me.practice.shop.shop.models.ShopUser;
 import me.practice.shop.shop.models.ShoppingCart;
 import me.practice.shop.shop.services.ShoppingCartsService;
@@ -48,7 +48,7 @@ public class UsersController {
     private ShoppingCartsRepository cartsRepository;
 
     @Autowired
-    private ProductsDatabase productsDatabase;
+    private ProductsRepository productsRepository;
 
     @Autowired
     private ShoppingCartsService cartsService;
@@ -156,7 +156,7 @@ public class UsersController {
     private ResponseEntity<?> modifyCartProduct(CartProductRequest request, ShoppingCart cart){
         int previousAmount = cart.getItems().getOrDefault(request.getProductId(), 0);
 
-        Optional<ShopProduct> product = this.productsDatabase.findById(request.getProductId());
+        Optional<BookProduct> product = this.productsRepository.findById(request.getProductId());
         if(product.isEmpty())
             return ResponseEntity.badRequest().body(new ErrorResponse("Taki produkt nie istnieje"));
         if(product.get().getInStock() + previousAmount < request.getAmount())
@@ -164,7 +164,7 @@ public class UsersController {
 
         product.get().setInStock(product.get().getInStock() - request.getAmount() + previousAmount);
         cart.getItems().put(request.getProductId(), request.getAmount());
-        this.productsDatabase.save(product.get());
+        this.productsRepository.save(product.get());
         return ResponseEntity.ok(this.cartsRepository.save(cart));
     }
 
@@ -182,7 +182,7 @@ public class UsersController {
         return this.ifUserLoggedIn(user->{
             ShoppingCart cart = this.cartsService.cartFromRequest(user.getUsername(), request.getProducts());
             List<String> productIds = cart.getItems().keySet().stream().toList();
-            Iterable<ShopProduct> products = this.productsDatabase.findAllById(productIds);
+            Iterable<BookProduct> products = this.productsRepository.findAllById(productIds);
 
             if(productIds.size() != StreamSupport.stream(products.spliterator(), false).count())
                 return ResponseEntity.badRequest().body(new ErrorResponse("Podano błędny produkt"));
@@ -197,12 +197,12 @@ public class UsersController {
                 return ResponseEntity.badRequest().body(new ErrorResponse("Nie wszystkie produkty są dostępne"));
             }
 
-            List<ShopProduct> updateProducts = StreamSupport.stream(products.spliterator(), false)
+            List<BookProduct> updateProducts = StreamSupport.stream(products.spliterator(), false)
                     .peek(product-> product.setInStock(product.getInStock() - cart.getItems().get(product.getId())
                             + oldCart.getItems().getOrDefault(product.getId(), 0)))
                     .collect(Collectors.toList());
 
-            this.productsDatabase.saveAll(updateProducts);
+            this.productsRepository.saveAll(updateProducts);
             return ResponseEntity.ok(this.cartsRepository.save(cart));
         });
     }
