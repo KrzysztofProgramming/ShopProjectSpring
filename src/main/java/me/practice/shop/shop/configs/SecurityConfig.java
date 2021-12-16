@@ -51,7 +51,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .antMatchers("/api/auth/**").permitAll()
                 .antMatchers(HttpMethod.GET, "/api/products/**").permitAll()
                 .antMatchers("/api/users/cart/**").permitAll()
-                .anyRequest().authenticated()
+                .anyRequest().permitAll()
                 .and().cors().and()
                 .exceptionHandling().authenticationEntryPoint(jwtAuthEntryPoint);
         http.addFilterBefore(jwtTokenFilter, UsernamePasswordAuthenticationFilter.class);

@@ -8,7 +8,6 @@ import me.practice.shop.shop.database.users.UsersDatabase;
 import me.practice.shop.shop.models.ErrorResponse;
 import me.practice.shop.shop.models.RefreshToken;
 import me.practice.shop.shop.models.ShopUser;
-import me.practice.shop.shop.permissions.Roles;
 import me.practice.shop.shop.services.RefreshTokensService;
 import me.practice.shop.shop.services.UserDetailsServiceImpl;
 import me.practice.shop.shop.utils.JwtUtils;
@@ -57,7 +56,7 @@ public class AuthController {
             return ResponseEntity.badRequest().body(new ErrorResponse("Email already taken"));
 
         usersDatabase.insert(new ShopUser(request.getUsername(), request.getEmail(),
-                encoder.encode(request.getPassword()), Roles.defaultRoles(), Collections.emptyList()));
+                encoder.encode(request.getPassword()), Collections.emptyList()));
 
         return loginWithUsername(new LoginRequest(request.getUsername(), request.getPassword()));
     }

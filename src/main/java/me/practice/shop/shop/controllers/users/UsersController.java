@@ -16,6 +16,7 @@ import me.practice.shop.shop.models.ErrorResponse;
 import me.practice.shop.shop.models.ShopUser;
 import me.practice.shop.shop.models.ShoppingCart;
 import me.practice.shop.shop.services.ShoppingCartsService;
+import me.practice.shop.shop.services.UserDetailsServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -53,7 +54,10 @@ public class UsersController {
     @Autowired
     private ShoppingCartsService cartsService;
 
-    @PreAuthorize("hasAuthority('USERS_GET')")
+    @Autowired
+    private UserDetailsServiceImpl userService;
+
+    @PreAuthorize("hasAuthority('users:read')")
     @GetMapping(value = "byUsername/{id}")
     public ResponseEntity<?> getUserById(@PathVariable String id){
         Optional<ShopUser> user = usersDatabase.findById(id);
@@ -61,14 +65,14 @@ public class UsersController {
                 : ResponseEntity.badRequest().body("No user with id: " + id);
     }
 
-    @PreAuthorize("hasAuthority('USERS_GET')")
+    @PreAuthorize("hasAuthority('users:read')")
     @GetMapping(value = "getAll")
     public ResponseEntity<?> getAllUsers(@Valid GetUsersParams params){
         Pageable pageable = PageRequest.of(params.getPageNumber(), params.getPageSize());
         return ResponseEntity.ok("siema"); //todo
     }
 
-    @PreAuthorize("hasAuthority('USERS_MODIFY')")
+    @PreAuthorize("hasAuthority('users:write')")
     @PostMapping(value = "addNewUser")
     public ResponseEntity<?> addNewUser(@Valid @RequestBody UserRequest request){
         String error = validateUserRequest(request);
@@ -76,7 +80,7 @@ public class UsersController {
         return ResponseEntity.ok(toUserResponse(usersDatabase.insert(fromUserRequest(request))));
     }
 
-    @PreAuthorize("hasAuthority('USERS_MODIFY')")
+    @PreAuthorize("hasAuthority('users:write')")
     @PutMapping(value = "updateUserByUsername/{id}")
     public ResponseEntity<?> updateUser(@PathVariable String id, @Valid @RequestBody UserRequest request){
         Optional<ShopUser> user = usersDatabase.findById(id);
@@ -94,10 +98,12 @@ public class UsersController {
         if(!id.equals(request.getUsername()))
             usersDatabase.deleteById(id);
 
-        return ResponseEntity.ok(toUserResponse(usersDatabase.save(fromUserRequest(request))));
+        try{ return ResponseEntity.ok(toUserResponse(usersDatabase.save(fromUserRequest(request)))); }
+        catch (IllegalArgumentException e)
+        {return ResponseEntity.badRequest().body(new ErrorResponse("błędne role"));}
     }
 
-    @PreAuthorize("hasAuthority('USERS_MODIFY')")
+    @PreAuthorize("hasAuthority('users:write')")
     @DeleteMapping(value = "deleteUser/{id}")
     public ResponseEntity<?> deleteUser(@PathVariable String id){
         if(!usersDatabase.existsById(id))
@@ -225,7 +231,7 @@ public class UsersController {
     }
 
     private UserResponse toUserResponse(ShopUser user){
-        return new UserResponse(user.getUsername(), user.getEmail(), user.getAuthorities(), user.getRoles());
+        return new UserResponse(user.getUsername(), user.getEmail(), user.getAuthorities(), user.getRolesStrings());
     }
 
     private String validateUserRequest(UserRequest request){
@@ -244,11 +250,10 @@ public class UsersController {
         return usersDatabase.existsByEmail(email);
     }
 
-    private ShopUser fromUserRequest(UserRequest r){
+    private ShopUser fromUserRequest(UserRequest r) throws IllegalArgumentException{
         return new ShopUser(r.getUsername(), r.getEmail(),
-                encoder.encode(r.getPassword()),r.getRoles(), r.getAuthorities());
+                encoder.encode(r.getPassword()),this.userService.getRolesByNames(r.getRoles()));
     }
-
 
 
 }

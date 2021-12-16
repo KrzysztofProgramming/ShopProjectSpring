@@ -6,6 +6,7 @@ import me.practice.shop.shop.controllers.products.models.ProductRequest;
 import me.practice.shop.shop.database.authors.Author;
 import me.practice.shop.shop.database.files.DatabaseImage;
 import me.practice.shop.shop.database.products.ProductsRepository;
+import me.practice.shop.shop.database.users.RolesRepository;
 import me.practice.shop.shop.models.BookProduct;
 import me.practice.shop.shop.models.ErrorResponse;
 import me.practice.shop.shop.utils.MediaTypeUtils;
@@ -45,8 +46,12 @@ public class ProductsController {
     @Autowired
     private AuthorsManager authorsManager;
 
+    @Autowired
+    private RolesRepository rolesRepository;
+
     @GetMapping(value = "getAll")
     public ResponseEntity<?> getProducts(@Valid GetProductsParams params) {
+        System.out.println(this.rolesRepository);
         Page<BookProduct> productPage = this.productsRepository.findByParams(params);
         return ResponseEntity.ok(new GetProductsResponse(productPage.getNumber() + 1, productPage.getTotalPages(),
                 productPage.getTotalElements(), productPage.toList()));
@@ -66,7 +71,7 @@ public class ProductsController {
     }
 
 
-    @PreAuthorize("hasAuthority('PRODUCTS_MODIFY')")
+    @PreAuthorize("hasAuthority('products:write')")
     @PostMapping(value = "addNewProduct")
     public ResponseEntity<?> addProduct(@Valid @RequestBody ProductRequest request) {
         Optional<Collection<Author>> authors = this.authorsManager.validateAndSaveAuthors(request.getAuthors());
@@ -74,7 +79,7 @@ public class ProductsController {
         return ResponseEntity.ok().body(productsRepository.insert(this.newProduct(request, authors.get())));
     }
 
-    @PreAuthorize("hasAuthority('PRODUCTS_MODIFY')")
+    @PreAuthorize("hasAuthority('products:write')")
     @PutMapping(value = "updateProduct/{id}")
     public ResponseEntity<?> updateProduct(@PathVariable String id, @Valid @RequestBody ProductRequest request) {
         Optional<Collection<Author>> authors = this.authorsManager.validateAndSaveAuthors(request.getAuthors());
@@ -89,14 +94,14 @@ public class ProductsController {
          return ResponseEntity.ok(product.get());
     }
 
-    @PreAuthorize("hasAuthority('PRODUCTS_MODIFY')")
+    @PreAuthorize("hasAuthority('products:write')")
     @DeleteMapping(value = "deleteAuthor/{id}")
     public ResponseEntity<?> deleteAuthor(@PathVariable String id){
         return this.authorsManager.deleteAuthor(id) ? ResponseEntity.ok().build(): ResponseEntity.badRequest().body(
                 new ErrorResponse("Niektóre produkty korzystają z tego autora, zmień to przed usunięciem go"));
     }
 
-    @PreAuthorize("hasAuthority('PRODUCTS_MODIFY')")
+    @PreAuthorize("hasAuthority('products:write')")
     @DeleteMapping(value = "deleteProduct/{id}")
     public ResponseEntity<?> deleteProduct(@PathVariable String id){
         productsRepository.deleteById(id);
@@ -104,7 +109,7 @@ public class ProductsController {
         return ResponseEntity.ok().build();
     }
 
-    @PreAuthorize("hasAuthority('PRODUCTS_MODIFY')")
+    @PreAuthorize("hasAuthority('products:write')")
     @PutMapping("uploadProductImage/{id}")
     public ResponseEntity<?> uploadProductImage(@PathVariable("id") String productId,
                                                 @RequestParam("file") MultipartFile file) throws IOException {
@@ -121,7 +126,7 @@ public class ProductsController {
 
 
 
-    @PreAuthorize("hasAuthority('PRODUCTS_MODIFY')")
+    @PreAuthorize("hasAuthority('products:write')")
     @DeleteMapping("deleteProductImage/{id}")
     public ResponseEntity<?> deleteProductImage(@PathVariable("id") String productId){
         this.productsImagesRepository.deleteProductImages(productId);

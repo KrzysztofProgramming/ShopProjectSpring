@@ -7,25 +7,27 @@ import java.util.Collection;
 import java.util.stream.Collectors;
 
 public enum Permissions {
-    NO_PERMISSION(0),
-    PRODUCTS_MODIFY(1),
-    USERS_MODIFY(1<<1),
-    USERS_GET(1<<2);
+    NO_PERMISSION(0, ""),
+    PRODUCTS_WRITE(1, "products:write"),
+    USERS_WRITE(1<<1, "users:write"),
+    USERS_READ(1<<2, "users:read"),
+    ROLES_READ(1<<3, "roles:read"),
+    ROLES_WRITE(1<<4, "roles:write");
 
     @Getter
     private final long numberValue;
+    private final String stringValue;
 
-    Permissions(long value) {
-        numberValue = value;
+
+    Permissions(long numberValue, String stringValue) {
+        this.numberValue = numberValue;
+        this.stringValue = stringValue;
     }
 
     public static Permissions fromString(String name){
-        try{
-            return Permissions.valueOf(name);
-        }
-        catch(Exception e){
-            return NO_PERMISSION;
-        }
+        return Arrays.stream(Permissions.values())
+                .filter(value->value.stringValue.equalsIgnoreCase(name))
+                .findAny().orElse(NO_PERMISSION);
     }
 
     public static Collection<Permissions> fromNumber(long value){
@@ -42,5 +44,10 @@ public enum Permissions {
 
     private boolean isInValue(long value) {
         return (value & this.getNumberValue()) > 0;
+    }
+
+    @Override
+    public String toString() {
+        return this.stringValue;
     }
 }
