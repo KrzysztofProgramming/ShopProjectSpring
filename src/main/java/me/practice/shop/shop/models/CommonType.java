@@ -5,11 +5,12 @@ import lombok.Data;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
-@Document("products_stocks")
-@AllArgsConstructor
 @Data
-public class ProductStockInfo {
+@Document("common_types_list")
+@AllArgsConstructor
+public class CommonType {
+    public static final String COLLECTION_NAME = "common_types_list";
+
     @Id
-    private String productId;
-    private Integer amount;
+    private String name;
 }

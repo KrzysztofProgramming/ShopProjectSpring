@@ -69,11 +69,11 @@ public class UsersController {
     @GetMapping(value = "getAll")
     public ResponseEntity<?> getAllUsers(@Valid GetUsersParams params){
         Pageable pageable = PageRequest.of(params.getPageNumber(), params.getPageSize());
-        return ResponseEntity.ok("siema"); //todo
+        return ResponseEntity.ok(this.usersDatabase.findAll()); //todo
     }
 
     @PreAuthorize("hasAuthority('users:write')")
-    @PostMapping(value = "addNewUser")
+    @PostMapping(value = "newUser")
     public ResponseEntity<?> addNewUser(@Valid @RequestBody UserRequest request){
         String error = validateUserRequest(request);
         if(!error.isEmpty()) return ResponseEntity.badRequest().body(new ErrorResponse(error));

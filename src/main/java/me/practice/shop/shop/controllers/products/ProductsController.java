@@ -1,14 +1,17 @@
 package me.practice.shop.shop.controllers.products;
 
+import me.practice.shop.shop.controllers.authors.AuthorsManager;
+import me.practice.shop.shop.controllers.authors.models.AuthorRequest;
 import me.practice.shop.shop.controllers.products.models.GetProductsParams;
-import me.practice.shop.shop.controllers.products.models.GetProductsResponse;
 import me.practice.shop.shop.controllers.products.models.ProductRequest;
-import me.practice.shop.shop.database.authors.Author;
+import me.practice.shop.shop.controllers.products.models.ProductResponse;
+import me.practice.shop.shop.controllers.products.models.TypesResponse;
 import me.practice.shop.shop.database.files.DatabaseImage;
 import me.practice.shop.shop.database.products.ProductsRepository;
-import me.practice.shop.shop.database.users.RolesRepository;
+import me.practice.shop.shop.models.Author;
 import me.practice.shop.shop.models.BookProduct;
 import me.practice.shop.shop.models.ErrorResponse;
+import me.practice.shop.shop.models.GetByParamsResponse;
 import me.practice.shop.shop.utils.MediaTypeUtils;
 import org.bson.types.Binary;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -47,64 +50,73 @@ public class ProductsController {
     private AuthorsManager authorsManager;
 
     @Autowired
-    private RolesRepository rolesRepository;
+    private TypesManager typesManager;
 
     @GetMapping(value = "getAll")
     public ResponseEntity<?> getProducts(@Valid GetProductsParams params) {
-        System.out.println(this.rolesRepository);
         Page<BookProduct> productPage = this.productsRepository.findByParams(params);
-        return ResponseEntity.ok(new GetProductsResponse(productPage.getNumber() + 1, productPage.getTotalPages(),
-                productPage.getTotalElements(), productPage.toList()));
+        Page<ProductResponse> responsePage = productPage.map(ProductResponse::new);
+        return ResponseEntity.ok(new GetByParamsResponse<>(productPage.getNumber() + 1, productPage.getTotalPages(),
+                productPage.getTotalElements(), responsePage.toList()));
     }
 
     @GetMapping(value = "byId/{id}")
     public ResponseEntity<?> getProductById(@PathVariable String id) {
         Optional<BookProduct> product = productsRepository.findById(id);
-        return product.isPresent() ? ResponseEntity.ok(product)
+        return product.isPresent() ? ResponseEntity.ok(product.map(ProductResponse::new))
                 : ResponseEntity.badRequest().body(productNotExistsInfo);
     }
 
     @GetMapping(value = "byIds")
-    public ResponseEntity<?> getProductsByIds(@RequestParam @Valid @NotEmpty List<String> ids){
+    public ResponseEntity<?> getProductsByIds(@RequestParam @Valid @NotEmpty List<String> ids) {
         Iterable<BookProduct> products = productsRepository.findAllById(ids);
-        return ResponseEntity.ok(StreamSupport.stream(products.spliterator(), false).collect(Collectors.toList()));
+        return ResponseEntity.ok(StreamSupport.stream(products.spliterator(), false)
+                .map(ProductResponse::new).collect(Collectors.toList()));
     }
 
+    @GetMapping(value = "getTypes")
+    public ResponseEntity<?> getTypes(){
+        return ResponseEntity.ok(new TypesResponse(this.typesManager.getTypesAsStrings()));
+    }
 
     @PreAuthorize("hasAuthority('products:write')")
-    @PostMapping(value = "addNewProduct")
+    @PostMapping(value = "newProduct")
     public ResponseEntity<?> addProduct(@Valid @RequestBody ProductRequest request) {
         Optional<Collection<Author>> authors = this.authorsManager.validateAndSaveAuthors(request.getAuthors());
-        if(authors.isEmpty()) return ResponseEntity.badRequest().body(new ErrorResponse("Zły autor/autorzy"));
-        return ResponseEntity.ok().body(productsRepository.insert(this.newProduct(request, authors.get())));
+        if (authors.isEmpty()) return ResponseEntity.badRequest().body(new ErrorResponse("Zły autor/autorzy"));
+        this.typesManager.addNewTypes(request.getTypes());
+        return ResponseEntity.ok().body(new ProductResponse(
+                productsRepository.insert(this.newProduct(request, authors.get()))));
     }
 
     @PreAuthorize("hasAuthority('products:write')")
     @PutMapping(value = "updateProduct/{id}")
     public ResponseEntity<?> updateProduct(@PathVariable String id, @Valid @RequestBody ProductRequest request) {
         Optional<Collection<Author>> authors = this.authorsManager.validateAndSaveAuthors(request.getAuthors());
-        if(authors.isEmpty()) return ResponseEntity.badRequest().body(new ErrorResponse("Zły autor/autorzy"));
-
-        Optional<BookProduct> product =  productsRepository.findById(id)
-                    .map(shopProduct ->
-                            productsRepository.save(this.fromRequest(shopProduct.getId(), request, authors.get())));
-        if(product.isEmpty())
-            return ResponseEntity.badRequest().body(productNotExistsInfo);
-
-         return ResponseEntity.ok(product.get());
+        if (authors.isEmpty()) return ResponseEntity.badRequest().body(new ErrorResponse("Zły autor/autorzy"));
+        //todo check it
+        return productsRepository.findById(id)
+                .map(product -> {
+                    this.typesManager.addNewTypes(request.getTypes());
+                    return ResponseEntity.ok((Object) new ProductResponse(
+                            productsRepository.save(this.fromRequest(product.getId(), request, authors.get()))));
+                }).orElse(ResponseEntity.badRequest().body(productNotExistsInfo));
     }
 
     @PreAuthorize("hasAuthority('products:write')")
-    @DeleteMapping(value = "deleteAuthor/{id}")
-    public ResponseEntity<?> deleteAuthor(@PathVariable String id){
-        return this.authorsManager.deleteAuthor(id) ? ResponseEntity.ok().build(): ResponseEntity.badRequest().body(
-                new ErrorResponse("Niektóre produkty korzystają z tego autora, zmień to przed usunięciem go"));
+    @PutMapping(value = "updateAuthor/{id}")
+    public ResponseEntity<?> updateAuthor(@PathVariable String id, @Valid @RequestBody AuthorRequest request) {
+        return this.authorsManager.updateAuthor(id, request);
     }
 
     @PreAuthorize("hasAuthority('products:write')")
     @DeleteMapping(value = "deleteProduct/{id}")
-    public ResponseEntity<?> deleteProduct(@PathVariable String id){
+    public ResponseEntity<?> deleteProduct(@PathVariable String id) {
+        BookProduct removingProduct = this.productsRepository.findById(id).orElse(null);
+        if(removingProduct==null) return ResponseEntity.ok().build();
         productsRepository.deleteById(id);
+        this.typesManager.checkForRemovingTypes(removingProduct);
+        this.authorsManager.checkForDeletingAuthors(removingProduct);
         this.productsImagesRepository.deleteProductImages(id);
         return ResponseEntity.ok().build();
     }
@@ -113,11 +125,11 @@ public class ProductsController {
     @PutMapping("uploadProductImage/{id}")
     public ResponseEntity<?> uploadProductImage(@PathVariable("id") String productId,
                                                 @RequestParam("file") MultipartFile file) throws IOException {
-        if(!productsRepository.existsById(productId)){
+        if (!productsRepository.existsById(productId)) {
             return ResponseEntity.badRequest().body(this.productNotExistsInfo);
         }
         String fileType = MediaTypeUtils.detectFileType(file.getBytes());
-        if(!MediaTypeUtils.isImageTypeOK(fileType)){
+        if (!MediaTypeUtils.isImageTypeOK(fileType)) {
             return ResponseEntity.badRequest().body(new ErrorResponse("Zły typ pliku"));
         }
         productsImagesRepository.saveAndScale(new DatabaseImage(productId, fileType, new Binary(file.getBytes())));
@@ -125,17 +137,16 @@ public class ProductsController {
     }
 
 
-
     @PreAuthorize("hasAuthority('products:write')")
     @DeleteMapping("deleteProductImage/{id}")
-    public ResponseEntity<?> deleteProductImage(@PathVariable("id") String productId){
+    public ResponseEntity<?> deleteProductImage(@PathVariable("id") String productId) {
         this.productsImagesRepository.deleteProductImages(productId);
         return ResponseEntity.ok().build();
     }
 
     @GetMapping("downloadProductOriginalImage/{id}")
     public ResponseEntity<?> downloadOriginalProductImage(@PathVariable("id") String productId) {
-       return this.downloadProductImage(this.productsImagesRepository.getOriginalImage(productId));
+        return this.downloadProductImage(this.productsImagesRepository.getOriginalImage(productId));
     }
 
     @GetMapping("downloadProductSmallImage/{id}")
@@ -143,22 +154,22 @@ public class ProductsController {
         return this.downloadProductImage(this.productsImagesRepository.getSmallImage(productId));
     }
 
-    private ResponseEntity<?> downloadProductImage(Optional<DatabaseImage> image){
-        if(image.isEmpty())
+    private ResponseEntity<?> downloadProductImage(Optional<DatabaseImage> image) {
+        if (image.isEmpty())
             return ResponseEntity.badRequest().body(new ErrorResponse("Ten produkt nie ma obrazu"));
         return ResponseEntity.ok()
                 .contentType(MediaType.valueOf(image.get().getMediaType()))
                 .body(image.get().getImage().getData());
     }
 
-    private BookProduct newProduct(ProductRequest request, Collection<Author> authors){
+    private BookProduct newProduct(ProductRequest request, Collection<Author> authors) {
         return fromRequest(UUID.randomUUID().toString(), request, authors);
     }
 
     private BookProduct fromRequest(String id, ProductRequest request, Collection<Author> authors) {
-        return new BookProduct(id, request.getName(),Math.floor(request.getPrice() * 100) / 100,
-                request.getDescription(),
-                authors,
-                request.getTypes().stream().map(String::toUpperCase).collect(Collectors.toList()), request.getInStock());
+        return new BookProduct(id, request.getName(), Math.floor(request.getPrice() * 100) / 100,
+                request.getDescription(), authors,
+                authors.stream().map(Author::getName).collect(Collectors.toList()),
+                request.getTypes(), request.getInStock());
     }
 }

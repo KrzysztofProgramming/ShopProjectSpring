@@ -8,9 +8,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.aggregation.Aggregation;
-import org.springframework.data.mongodb.core.aggregation.GroupOperation;
 import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.CriteriaDefinition;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.TextQuery;
 import org.springframework.data.support.PageableExecutionUtils;
@@ -20,62 +19,51 @@ import java.util.Date;
 import java.util.GregorianCalendar;
 
 @SuppressWarnings("unused")
-public class ProductsSearcherImpl<T> implements ProductsSearcher {
+public class ProductsSearcherImpl implements ProductsSearcher {
     @Autowired
     private MongoTemplate mongoTemplate;
 
     @Override
-    public Page<BookProduct> findByParams(GetProductsParams p) {
-        GroupOperation operation = Aggregation.group("siema");
-
-
-        Pageable pageable = PageRequest.of(p.getPageNumber() - 1, p.getPageSize());
-        Query q;
-        //phrase
-        if(Strings.isNotEmpty(p.getSearchPhrase())){
-            q = new TextQuery(p.getSearchPhrase()).sortByScore();
+    public Page<BookProduct> findByParams(GetProductsParams params) {
+        Query query;
+        if(Strings.isNotEmpty(params.getSearchPhrase())) {
+            query = new TextQuery(params.getSearchPhrase()).sortByScore();
         }
         else{
-            q = new Query();
+            query = new Query();
         }
-        q.with(pageable);
+        applyCriteria(query, this.generatePriceCriteria(params));
+        applyCriteria(query, this.generateStockCriteria(params));
+        applyCriteria(query, this.generateTypesCriteria(params));
 
-        //price
-        Criteria c = Criteria.where("price");
-        boolean addCriteria = false;
-        if(p.getMinPrice() >= 0){
-            c.gte(p.getMinPrice());
-            addCriteria = true;
-        }
-        if(p.getMaxPrice() >= 0){
-            c.lte(p.getMaxPrice());
-            addCriteria = true;
-        }
-        if(addCriteria)
-            q.addCriteria(c);
+        Pageable pageable = PageRequest.of(params.getPageNumber() - 1, params.getPageSize());
+        return PageableExecutionUtils.getPage(mongoTemplate.find(query, BookProduct.class), pageable,
+                () -> mongoTemplate.count(Query.of(query).limit(-1).skip(-1), BookProduct.class));
+    }
 
-        //inStock
-        c = Criteria.where("inStock");
-        addCriteria = false;
-        if(p.getMinInStock() >= 0){
-            c.gte(p.getMinInStock());
-            addCriteria = true;
-        }
-        if(p.getMaxInStock() >= 0){
-            c.lte(p.getMaxInStock());
-            addCriteria = true;
-        }
-        if(addCriteria)
-            q.addCriteria(c);
+    private Criteria generatePriceCriteria(GetProductsParams params){
+        return params.getMinPrice() >=0 ?
+                Criteria.where("price").gte(params.getMinPrice()) :
+                params.getMaxPrice() >= 0 ?
+                        Criteria.where("price").lte(params.getMaxPrice()) :
+                        null;
+    }
 
-        //types
-        if(!p.getTypes().isEmpty()){
-            q.addCriteria(Criteria.where("types").elemMatch(new Criteria().in(p.getTypes())));
-        }
+    private Query applyCriteria(Query query, CriteriaDefinition criteria){
+        return criteria==null ? query : query.addCriteria(criteria);
+    }
 
+    private Criteria generateStockCriteria(GetProductsParams params){
+        return params.getMinInStock() >=0 ?
+                Criteria.where("inStock").gte(params.getMinInStock()) :
+                params.getMaxInStock() >= 0 ?
+                        Criteria.where("inStock").lte(params.getMaxInStock()) :
+                        null;
+    }
 
-        return PageableExecutionUtils.getPage(mongoTemplate.find(q, BookProduct.class), pageable,
-                () -> mongoTemplate.count(Query.of(q).limit(-1).skip(-1), BookProduct.class));
+    private Criteria generateTypesCriteria(GetProductsParams params){
+        return params.getTypes().isEmpty() ? null :
+                Criteria.where("types").elemMatch(new Criteria().in(params.getTypes()));
     }
 
     private Date maxTime(Date d){

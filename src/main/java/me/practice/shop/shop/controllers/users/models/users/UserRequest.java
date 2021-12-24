@@ -7,6 +7,7 @@ import me.practice.shop.shop.validators.password.Password;
 import me.practice.shop.shop.validators.username.Username;
 
 import javax.validation.constraints.Email;
+import javax.validation.constraints.NotNull;
 import java.util.Collection;
 
 @Data
@@ -20,6 +21,6 @@ public class UserRequest {
     private String email;
     @Password
     private String password;
-    private Collection<String> authorities;
+    @NotNull
     private Collection<String> roles;
 }

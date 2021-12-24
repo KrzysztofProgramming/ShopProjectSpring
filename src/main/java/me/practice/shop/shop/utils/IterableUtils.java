@@ -21,6 +21,9 @@ public class IterableUtils {
     }
 
     public static <T> List<T> toList(Iterable<T> data){
+        if(data instanceof List){
+            return (List<T>)data;
+        }
         return StreamSupport.stream(data.spliterator(), false).collect(Collectors.toList());
     }
 }

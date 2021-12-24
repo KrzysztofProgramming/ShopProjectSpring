@@ -50,8 +50,8 @@ public class ProductsImagesRepository {
         }
     }
 
-    private void saveOriginalImage(DatabaseImage image){
-        this.mongoTemplate.save(image, IMAGES_COL_NAME);
+    private DatabaseImage saveOriginalImage(DatabaseImage image){
+        return this.mongoTemplate.save(image, IMAGES_COL_NAME);
     }
 
     private void saveSmallImage(DatabaseImage image){
@@ -86,7 +86,7 @@ public class ProductsImagesRepository {
 //        return saveAndScale(image, new ByteArrayInputStream(image.getImage().getData()));
 //    }
 
-    public boolean saveAndScale(DatabaseImage image){
+    public Optional<DatabaseImage> saveAndScale(DatabaseImage image){
 
         try {
             JpegImageMetadata metadata = (JpegImageMetadata) Imaging.getMetadata(image.getImage().getData());
@@ -113,12 +113,11 @@ public class ProductsImagesRepository {
                 this.saveSmallImage(smallImage);
             }
             image.setImage(new Binary(GzipUtils.compress(image.getImage().getData())));
-            this.saveOriginalImage(image);
+            return Optional.of(this.saveOriginalImage(image));
         } catch (IOException | ImageReadException | ClassCastException | ImageWriteException e) {
 //            e.printStackTrace();
-            return false;
+            return Optional.empty();
         }
-        return true;
     }
 
     public void deleteProductImages(String id){

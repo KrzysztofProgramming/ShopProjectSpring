@@ -2,12 +2,11 @@ package me.practice.shop.shop.controllers.products.models;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 
-@Data
-@NoArgsConstructor
+import java.util.Collection;
+
 @AllArgsConstructor
-public class AuthorRequest {
-    private String name;
-    private String id;
+@Data
+public class TypesResponse {
+    private Collection<String> types;
 }

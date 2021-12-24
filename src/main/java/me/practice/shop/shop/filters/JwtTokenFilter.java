@@ -35,7 +35,7 @@ public class JwtTokenFilter extends OncePerRequestFilter {
 
     private void checkToken(HttpServletRequest request, HttpServletResponse response){
         String jwtToken = request.getHeader("Authorization");
-        if(Strings.isEmpty(jwtToken)) return;
+        if(Strings.isBlank(jwtToken)) return;
 
         try {
             if (!jwtUtils.isTokenExpired(jwtToken)) {

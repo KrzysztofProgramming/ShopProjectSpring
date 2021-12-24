@@ -13,4 +13,10 @@ public interface ProductsRepository extends MongoRepository<BookProduct, String>
 
     @Query("{authors: {$elemMatch: {$id: ?0}}}")
     Iterable<BookProduct> getByAuthorId(String authorId);
+
+    @Query("{types: {$elemMatch: {$in: ?0}}}")
+    Iterable<BookProduct> getByTypes(Iterable<String> types);
+
+    @Query("{authors: {$elemMatch: {$in: DBRef('authors_list', ?0)}}}")
+    Iterable<BookProduct> getByAuthorsIds(Iterable<String> authorsIds);
 }

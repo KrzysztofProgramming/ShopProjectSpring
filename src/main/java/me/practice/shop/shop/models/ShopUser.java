@@ -2,6 +2,7 @@ package me.practice.shop.shop.models;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import me.practice.shop.shop.permissions.Permissions;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.Indexed;
@@ -13,9 +14,14 @@ import java.util.stream.Collectors;
 
 @Data
 @AllArgsConstructor
-@Document("user_database")
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
+@Document(ShopUser.COLLECTION_NAME)
 public class ShopUser {
+
+    public static final String COLLECTION_NAME = "users_database";
+
     @Id
+    @EqualsAndHashCode.Include
     private String username;
     @Indexed(unique = true)
     private String email;
@@ -30,7 +36,7 @@ public class ShopUser {
 
     //getMergesAuthorities roles + additionalAuthorities
     public Collection<String> getAuthorities(){
-        return roles.stream().flatMap(role->role.getPermissions().stream()).collect(Collectors.toSet());
+        return roles.stream().flatMap(role->role.getAuthorities().stream()).collect(Collectors.toSet());
     }
 
 //    private Collection<String> getRolesAuthorities(){

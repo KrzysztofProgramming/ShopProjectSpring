@@ -1,16 +1,15 @@
-package me.practice.shop.shop.controllers.products.models;
+package me.practice.shop.shop.models;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
-import me.practice.shop.shop.models.BookProduct;
 
 import java.util.Collection;
 
 @Data
 @AllArgsConstructor
-public class GetProductsResponse {
+public class GetByParamsResponse<T> {
     private int pageNumber;
     private int totalPages;
     private long totalElements;
-    private Collection<BookProduct> products;
+    private Collection<T> result;
 }
