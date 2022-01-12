@@ -28,7 +28,9 @@ public class GetProductsParams extends PageableParams {
         this.types = types.stream().map(String::toLowerCase).collect(Collectors.toList());
     }
 
-    private List<String> authors = new ArrayList<>();
+    private String sort = "";
+
+    private List<String> authorsNames = new ArrayList<>();
 
     private Integer minInStock = -1;
     private Integer maxInStock = -1;

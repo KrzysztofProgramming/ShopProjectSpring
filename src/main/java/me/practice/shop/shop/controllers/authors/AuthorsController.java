@@ -5,6 +5,7 @@ import me.practice.shop.shop.controllers.authors.models.AuthorResponse;
 import me.practice.shop.shop.controllers.authors.models.GetAuthorsParams;
 import me.practice.shop.shop.database.authors.AuthorsRepository;
 import me.practice.shop.shop.models.Author;
+import me.practice.shop.shop.models.ErrorResponse;
 import me.practice.shop.shop.models.GetByParamsResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -55,7 +56,12 @@ public class AuthorsController {
     @PreAuthorize("hasAuthority('products:write')")
     @PostMapping(value = "newAuthor")
     public ResponseEntity<?> addNewAuthor(@Valid @RequestBody AuthorRequest request){
-        return ResponseEntity.ok(new AuthorResponse(this.authorsRepository.insert(this.newAuthor(request))));
+        try {
+            return ResponseEntity.ok(new AuthorResponse(this.authorsRepository.insert(this.newAuthor(request))));
+        }
+        catch (Exception e){
+            return ResponseEntity.badRequest().body(new ErrorResponse("Autor o takim imieniu już istnieje"));
+        }
     }
 
     @PreAuthorize("hasAuthority('products:write')")

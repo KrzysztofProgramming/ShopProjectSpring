@@ -31,7 +31,7 @@ public class ProductRequest {
     }
 
     @NotNull
-    private Collection<ProductAuthorRequest> authors;
+    private Collection<String> authorsNames;
 
     @PositiveOrZero
     private Integer inStock;

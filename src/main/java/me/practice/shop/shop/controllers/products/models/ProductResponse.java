@@ -16,11 +16,12 @@ public class ProductResponse {
     private Double price;
     private String description;
     private Collection<AuthorResponse> authors;
+    private Collection<String> types;
     private Integer inStock;
 
     public ProductResponse(BookProduct product){
         this(product.getId(),product.getName(), product.getPrice(), product.getDescription(),
                 product.getAuthors().stream().map(AuthorResponse::new).collect(Collectors.toList()),
-                product.getInStock());
+                product.getTypes(), product.getInStock());
     }
 }

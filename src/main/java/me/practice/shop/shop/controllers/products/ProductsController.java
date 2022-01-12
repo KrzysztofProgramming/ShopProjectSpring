@@ -2,10 +2,7 @@ package me.practice.shop.shop.controllers.products;
 
 import me.practice.shop.shop.controllers.authors.AuthorsManager;
 import me.practice.shop.shop.controllers.authors.models.AuthorRequest;
-import me.practice.shop.shop.controllers.products.models.GetProductsParams;
-import me.practice.shop.shop.controllers.products.models.ProductRequest;
-import me.practice.shop.shop.controllers.products.models.ProductResponse;
-import me.practice.shop.shop.controllers.products.models.TypesResponse;
+import me.practice.shop.shop.controllers.products.models.*;
 import me.practice.shop.shop.database.files.DatabaseImage;
 import me.practice.shop.shop.database.products.ProductsRepository;
 import me.practice.shop.shop.models.Author;
@@ -80,26 +77,34 @@ public class ProductsController {
     }
 
     @PreAuthorize("hasAuthority('products:write')")
+    @PostMapping(value = "newType")
+    public ResponseEntity<?> createNewType(@Valid @RequestBody TypeRequest request){
+        return this.typesManager.addNewType(request.getName());
+    }
+
+    @PreAuthorize("hasAuthority('products:write')")
     @PostMapping(value = "newProduct")
     public ResponseEntity<?> addProduct(@Valid @RequestBody ProductRequest request) {
-        Optional<Collection<Author>> authors = this.authorsManager.validateAndSaveAuthors(request.getAuthors());
-        if (authors.isEmpty()) return ResponseEntity.badRequest().body(new ErrorResponse("Zły autor/autorzy"));
+        Collection<Author> authors = this.authorsManager.getAuthorsByNames(request.getAuthorsNames());
+        if (authors.size() != request.getAuthorsNames().size())
+            return ResponseEntity.badRequest().body(new ErrorResponse("Zły autor/autorzy"));
         this.typesManager.addNewTypes(request.getTypes());
         return ResponseEntity.ok().body(new ProductResponse(
-                productsRepository.insert(this.newProduct(request, authors.get()))));
+                productsRepository.insert(this.newProduct(request, authors))));
     }
 
     @PreAuthorize("hasAuthority('products:write')")
     @PutMapping(value = "updateProduct/{id}")
     public ResponseEntity<?> updateProduct(@PathVariable String id, @Valid @RequestBody ProductRequest request) {
-        Optional<Collection<Author>> authors = this.authorsManager.validateAndSaveAuthors(request.getAuthors());
-        if (authors.isEmpty()) return ResponseEntity.badRequest().body(new ErrorResponse("Zły autor/autorzy"));
+        Collection<Author> authors = this.authorsManager.getAuthorsByNames(request.getAuthorsNames());
+        if (authors.size() != request.getAuthorsNames().size())
+            return ResponseEntity.badRequest().body(new ErrorResponse("Zły autor/autorzy"));
         //todo check it
         return productsRepository.findById(id)
                 .map(product -> {
                     this.typesManager.addNewTypes(request.getTypes());
                     return ResponseEntity.ok((Object) new ProductResponse(
-                            productsRepository.save(this.fromRequest(product.getId(), request, authors.get()))));
+                            productsRepository.save(this.fromRequest(product.getId(), request, authors))));
                 }).orElse(ResponseEntity.badRequest().body(productNotExistsInfo));
     }
 
