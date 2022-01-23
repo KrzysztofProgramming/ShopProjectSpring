@@ -53,5 +53,10 @@ public class TypesManager {
         return this.typesRepository.findAll().stream().map(CommonType::getName).collect(Collectors.toList());
     }
 
+    public List<String> getTypesByNames(Collection<String> names){
+        return StreamSupport.stream(this.typesRepository.getAllByNames(names.stream()
+                .map(CommonType::toTypeName).collect(Collectors.toList())).spliterator(), false)
+                .map(CommonType::getName).collect(Collectors.toList());
+    }
 
 }

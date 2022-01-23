@@ -8,7 +8,6 @@ import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.PositiveOrZero;
 import java.util.Collection;
-import java.util.stream.Collectors;
 
 @Data
 @AllArgsConstructor
@@ -25,10 +24,6 @@ public class ProductRequest {
 
     @NotNull
     private Collection<String> types;
-
-    private void setTypes(Collection<String> types){
-        this.types = types.stream().map(String::toLowerCase).collect(Collectors.toList());
-    }
 
     @NotNull
     private Collection<String> authorsNames;

@@ -94,7 +94,6 @@ public class ProductsImagesRepository {
             if(metadata !=null) imgMeta = metadata.getExif();
             TiffOutputSet exifSet = null;
             if(imgMeta != null) exifSet = imgMeta.getOutputSet();
-            System.out.println(exifSet);
 
             BufferedImage buffImg = ImageIO.read(new ByteArrayInputStream(image.getImage().getData()));
             if(buffImg.getHeight() > SMALL_IMAGE_SIZE || buffImg.getWidth() > SMALL_IMAGE_SIZE){

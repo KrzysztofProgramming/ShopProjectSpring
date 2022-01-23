@@ -1,5 +1,6 @@
 package me.practice.shop.shop.database.products;
 
+import com.mongodb.DBRef;
 import me.practice.shop.shop.models.BookProduct;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.data.mongodb.repository.Query;
@@ -17,6 +18,6 @@ public interface ProductsRepository extends MongoRepository<BookProduct, String>
     @Query("{types: {$elemMatch: {$in: ?0}}}")
     Iterable<BookProduct> getByTypes(Iterable<String> types);
 
-    @Query("{authors: {$elemMatch: {$in: DBRef('authors_list', ?0)}}}")
-    Iterable<BookProduct> getByAuthorsIds(Iterable<String> authorsIds);
+    @Query("{authors: {$elemMatch: {$in: ?0}}}")
+    Iterable<BookProduct> getByAuthorsIds(Iterable<DBRef> authorsIds);
 }

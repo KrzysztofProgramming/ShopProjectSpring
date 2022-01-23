@@ -11,3 +11,4 @@ public interface CommonTypesRepository extends MongoRepository<CommonType, Strin
     @Query("{name: {$in: ?0}}")
     Iterable<CommonType> getAllByNames(Iterable<String> names);
 }
+

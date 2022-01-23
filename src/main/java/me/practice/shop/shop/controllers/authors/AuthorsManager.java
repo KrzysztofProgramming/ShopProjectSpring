@@ -1,5 +1,6 @@
 package me.practice.shop.shop.controllers.authors;
 
+import com.mongodb.DBRef;
 import lombok.Getter;
 import me.practice.shop.shop.controllers.authors.models.AuthorRequest;
 import me.practice.shop.shop.controllers.authors.models.AuthorResponse;
@@ -69,14 +70,12 @@ public class AuthorsManager {
 
     public void checkForDeletingAuthors(BookProduct oldProduct){
         Collection<String> authorsIds = oldProduct.getAuthors().stream().map(Author::getId).collect(Collectors.toSet());
-        System.out.println(authorsIds);
-        Iterable<BookProduct> products = productsRepository.getByAuthorsIds(authorsIds);
-        System.out.println(products);
+        Iterable<BookProduct> products = productsRepository.getByAuthorsIds(authorsIds.stream()
+                .map(id-> new DBRef(Author.COLLECTION_NAME, id)).collect(Collectors.toList()));
         Collection<String> existingAuthorsIds = StreamSupport.stream(products.spliterator(), false)
                 .flatMap(bookProduct -> bookProduct.getAuthors().stream().map(Author::getId))
                 .collect(Collectors.toSet());
         authorsIds.removeAll(existingAuthorsIds);
-        System.out.println(authorsIds);
         if(authorsIds.isEmpty()) return;
         this.authorsRepository.deleteAllById(authorsIds);
     }

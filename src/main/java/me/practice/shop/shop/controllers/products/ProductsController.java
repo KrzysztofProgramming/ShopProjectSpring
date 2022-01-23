@@ -26,6 +26,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
@@ -85,27 +86,31 @@ public class ProductsController {
     @PreAuthorize("hasAuthority('products:write')")
     @PostMapping(value = "newProduct")
     public ResponseEntity<?> addProduct(@Valid @RequestBody ProductRequest request) {
-        Collection<Author> authors = this.authorsManager.getAuthorsByNames(request.getAuthorsNames());
-        if (authors.size() != request.getAuthorsNames().size())
-            return ResponseEntity.badRequest().body(new ErrorResponse("Zły autor/autorzy"));
-        this.typesManager.addNewTypes(request.getTypes());
-        return ResponseEntity.ok().body(new ProductResponse(
-                productsRepository.insert(this.newProduct(request, authors))));
+        return this.validateProductRequest(request, (authors, types)->
+                ResponseEntity.ok().body(new ProductResponse(
+                productsRepository.insert(this.newProduct(request, authors, types)))));
     }
 
     @PreAuthorize("hasAuthority('products:write')")
     @PutMapping(value = "updateProduct/{id}")
     public ResponseEntity<?> updateProduct(@PathVariable String id, @Valid @RequestBody ProductRequest request) {
-        Collection<Author> authors = this.authorsManager.getAuthorsByNames(request.getAuthorsNames());
-        if (authors.size() != request.getAuthorsNames().size())
-            return ResponseEntity.badRequest().body(new ErrorResponse("Zły autor/autorzy"));
-        //todo check it
-        return productsRepository.findById(id)
+        return this.validateProductRequest(request, (authors, types)-> productsRepository.findById(id)
                 .map(product -> {
                     this.typesManager.addNewTypes(request.getTypes());
                     return ResponseEntity.ok((Object) new ProductResponse(
-                            productsRepository.save(this.fromRequest(product.getId(), request, authors))));
-                }).orElse(ResponseEntity.badRequest().body(productNotExistsInfo));
+                            productsRepository.save(this.fromRequest(product.getId(), request, authors, types))));
+                }).orElse(ResponseEntity.badRequest().body(productNotExistsInfo)));
+    }
+
+    private ResponseEntity<?> validateProductRequest(ProductRequest request,
+                                                     BiFunction<Collection<Author>, Collection<String>, ResponseEntity<?>> fn){
+        Collection<Author> authors = this.authorsManager.getAuthorsByNames(request.getAuthorsNames());
+        if (authors.size() != request.getAuthorsNames().size())
+            return ResponseEntity.badRequest().body(new ErrorResponse("Zły autor/autorzy"));
+        Collection<String> types = this.typesManager.getTypesByNames(request.getTypes());
+        if (types.size() != request.getTypes().size())
+            return ResponseEntity.badRequest().body(new ErrorResponse("Zły typ/typy"));
+        return fn.apply(authors, types);
     }
 
     @PreAuthorize("hasAuthority('products:write')")
@@ -167,14 +172,14 @@ public class ProductsController {
                 .body(image.get().getImage().getData());
     }
 
-    private BookProduct newProduct(ProductRequest request, Collection<Author> authors) {
-        return fromRequest(UUID.randomUUID().toString(), request, authors);
+    private BookProduct newProduct(ProductRequest request, Collection<Author> authors, Collection<String> types) {
+        return fromRequest(UUID.randomUUID().toString(), request, authors, types);
     }
 
-    private BookProduct fromRequest(String id, ProductRequest request, Collection<Author> authors) {
+    private BookProduct fromRequest(String id, ProductRequest request, Collection<Author> authors, Collection<String> types) {
         return new BookProduct(id, request.getName(), Math.floor(request.getPrice() * 100) / 100,
                 request.getDescription(), authors,
                 authors.stream().map(Author::getName).collect(Collectors.toList()),
-                request.getTypes(), request.getInStock());
+                types, request.getInStock());
     }
 }

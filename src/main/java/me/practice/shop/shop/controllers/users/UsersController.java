@@ -1,9 +1,9 @@
 package me.practice.shop.shop.controllers.users;
 
-import me.practice.shop.shop.controllers.users.models.PasswordRequest;
 import me.practice.shop.shop.controllers.users.models.cart.CartProductRequest;
 import me.practice.shop.shop.controllers.users.models.cart.SetCartRequest;
-import me.practice.shop.shop.controllers.users.models.profile.ProfileRequest;
+import me.practice.shop.shop.controllers.users.models.profile.EmailRequest;
+import me.practice.shop.shop.controllers.users.models.profile.PasswordRequest;
 import me.practice.shop.shop.controllers.users.models.profile.ProfileResponse;
 import me.practice.shop.shop.controllers.users.models.users.GetUsersParams;
 import me.practice.shop.shop.controllers.users.models.users.UserRequest;
@@ -31,7 +31,6 @@ import javax.validation.Valid;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 @RestController
@@ -118,15 +117,16 @@ public class UsersController {
                 .ok(new ProfileResponse(user.getUsername(), user.getEmail())));
     }
 
-    @PutMapping("profile/update")
-    public ResponseEntity<?> modifyProfile(@Valid @RequestBody ProfileRequest profileRequest){
+    @PutMapping("profile/updateEmail")
+    public ResponseEntity<?> modifyProfile(@Valid @RequestBody EmailRequest emailRequest){
         return this.ifUserLoggedIn(user->{
-            System.out.println(profileRequest);
-            if(this.usersDatabase.existsByEmail(profileRequest.getEmail())) {
+            if(!encoder.matches(emailRequest.getPassword(), user.getPassword()))
+                return ResponseEntity.badRequest().body(new ErrorResponse("Błędne hasło"));
+            if(this.usersDatabase.existsByEmail(emailRequest.getNewEmail())) {
                 return ResponseEntity.badRequest().body(new ErrorResponse("Ten email jest już zajęty"));
             }
-            user.setEmail(profileRequest.getEmail());
-            this.usersDatabase.save(user);
+            user.setEmail(emailRequest.getNewEmail());
+            user = this.usersDatabase.save(user);
             return ResponseEntity.ok(new ProfileResponse(user.getUsername(), user.getEmail()));
         });
     }
@@ -160,17 +160,15 @@ public class UsersController {
     }
 
     private ResponseEntity<?> modifyCartProduct(CartProductRequest request, ShoppingCart cart){
-        int previousAmount = cart.getItems().getOrDefault(request.getProductId(), 0);
+//        int previousAmount = cart.getItems().getOrDefault(request.getProductId(), 0);
 
         Optional<BookProduct> product = this.productsRepository.findById(request.getProductId());
         if(product.isEmpty())
             return ResponseEntity.badRequest().body(new ErrorResponse("Taki produkt nie istnieje"));
-        if(product.get().getInStock() + previousAmount < request.getAmount())
+        if(product.get().getInStock() < request.getAmount())
             return ResponseEntity.badRequest().body(new ErrorResponse("Podana ilość nie jest już dostępna"));
 
-        product.get().setInStock(product.get().getInStock() - request.getAmount() + previousAmount);
         cart.getItems().put(request.getProductId(), request.getAmount());
-        this.productsRepository.save(product.get());
         return ResponseEntity.ok(this.cartsRepository.save(cart));
     }
 
@@ -193,29 +191,20 @@ public class UsersController {
             if(productIds.size() != StreamSupport.stream(products.spliterator(), false).count())
                 return ResponseEntity.badRequest().body(new ErrorResponse("Podano błędny produkt"));
 
-            ShoppingCart oldCart = this.cartsService.getUserShoppingCart(user.getUsername());
-
             if(!StreamSupport.stream(products.spliterator(), false).allMatch(product->
                     !cart.getItems().containsKey(product.getId()) ||
-                    product.getInStock() + oldCart.getItems().getOrDefault(product.getId(), 0)
+                    product.getInStock()
                     >= cart.getItems().get(product.getId()))
             ) {
                 return ResponseEntity.badRequest().body(new ErrorResponse("Nie wszystkie produkty są dostępne"));
             }
-
-            List<BookProduct> updateProducts = StreamSupport.stream(products.spliterator(), false)
-                    .peek(product-> product.setInStock(product.getInStock() - cart.getItems().get(product.getId())
-                            + oldCart.getItems().getOrDefault(product.getId(), 0)))
-                    .collect(Collectors.toList());
-
-            this.productsRepository.saveAll(updateProducts);
             return ResponseEntity.ok(this.cartsRepository.save(cart));
         });
     }
 
     @GetMapping("cart/getCart")
     public ResponseEntity<?> getCart(){
-        return this.ifUserLoggedIn(user-> ResponseEntity.ok(cartsService.getUserShoppingCart(user.getUsername())));
+        return this.ifUserLoggedIn(user-> ResponseEntity.ok(this.cartsService.getAndRenew(user.getUsername())));
     }
 
     private ResponseEntity<?> ifUserLoggedIn(Function<ShopUser, ResponseEntity<?>> fn){
