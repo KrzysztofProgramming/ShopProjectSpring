@@ -1,4 +1,4 @@
-package me.practice.shop.shop.database.tokens;
+package me.practice.shop.shop.database.refreshTokens;
 
 import me.practice.shop.shop.models.RefreshToken;
 import org.springframework.data.mongodb.repository.MongoRepository;

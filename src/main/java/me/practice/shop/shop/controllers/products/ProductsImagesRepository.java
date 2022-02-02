@@ -1,5 +1,6 @@
 package me.practice.shop.shop.controllers.products;
 
+import lombok.SneakyThrows;
 import me.practice.shop.shop.database.files.DatabaseImage;
 import me.practice.shop.shop.utils.GzipUtils;
 import org.apache.commons.imaging.ImageReadException;
@@ -30,7 +31,9 @@ public class ProductsImagesRepository {
 
     private static final String IMAGES_COL_NAME = "products_images";
     private static final String SMALL_IMAGES_COL_NAME = "products_images_small";
-    public static final int SMALL_IMAGE_SIZE = 300;
+    private static final String ICON_COL_NAME = "products_icons";
+    public static final int SMALL_IMAGE_SIZE = 350;
+    public static final int ICON_SIZE = 150;
 
     private final MongoTemplate mongoTemplate;
 
@@ -48,6 +51,9 @@ public class ProductsImagesRepository {
         if(!currentCollections.contains(IMAGES_COL_NAME)){
             this.mongoTemplate.createCollection(IMAGES_COL_NAME);
         }
+        if(!currentCollections.contains(ICON_COL_NAME)){
+            this.mongoTemplate.createCollection(ICON_COL_NAME);
+        }
     }
 
     private DatabaseImage saveOriginalImage(DatabaseImage image){
@@ -56,6 +62,22 @@ public class ProductsImagesRepository {
 
     private void saveSmallImage(DatabaseImage image){
         this.mongoTemplate.save(image, SMALL_IMAGES_COL_NAME);
+    }
+
+    private void saveIcon(DatabaseImage image){
+        this.mongoTemplate.save(image, ICON_COL_NAME);
+    }
+
+    public Optional<DatabaseImage> getIcon(String id){
+        return Optional.ofNullable(this.mongoTemplate.findById(id, DatabaseImage.class, ICON_COL_NAME))
+                .map(image->{
+                    try {
+                        image.setImage(GzipUtils.decompress(image.getImage()));
+                        return image;
+                    } catch (IOException e) {
+                        return null;
+                    }
+                }).or(()->this.getSmallImage(id));
     }
 
     public Optional<DatabaseImage> getSmallImage(String id){
@@ -82,9 +104,43 @@ public class ProductsImagesRepository {
                 });
     }
 
-//    public boolean saveAndScale(DatabaseImage image){
-//        return saveAndScale(image, new ByteArrayInputStream(image.getImage().getData()));
-//    }
+    @SneakyThrows
+    public void saveAndScaleSmallImage(DatabaseImage image, BufferedImage buffedOriginal, TiffOutputSet exifSet){
+        if (buffedOriginal.getHeight() > SMALL_IMAGE_SIZE || buffedOriginal.getWidth() > SMALL_IMAGE_SIZE) {
+            BufferedImage buffImg = Scalr.resize(buffedOriginal, SMALL_IMAGE_SIZE);
+            ByteArrayOutputStream imgOutput = new ByteArrayOutputStream();
+            ImageIO.write(buffImg, image.getMediaType().substring(image.getMediaType().indexOf("/") + 1), imgOutput);
+
+            if (exifSet != null) {
+                byte[] resizedImage = imgOutput.toByteArray();
+                imgOutput.reset();
+                new ExifRewriter().updateExifMetadataLossless(resizedImage, imgOutput, exifSet);
+            }
+
+            DatabaseImage smallImage = new DatabaseImage(image.getId(), image.getMediaType(),
+                    new Binary(GzipUtils.compress(imgOutput.toByteArray())));
+            this.saveSmallImage(smallImage);
+        }
+    }
+
+    @SneakyThrows
+    public void saveAndScaleIcon(DatabaseImage image, BufferedImage buffedOriginal, TiffOutputSet exifSet){
+        if (buffedOriginal.getHeight() > ICON_SIZE || buffedOriginal.getWidth() > ICON_SIZE) {
+            BufferedImage buffImg = Scalr.resize(buffedOriginal, ICON_SIZE);
+            ByteArrayOutputStream imgOutput = new ByteArrayOutputStream();
+            ImageIO.write(buffImg, image.getMediaType().substring(image.getMediaType().indexOf("/") + 1), imgOutput);
+
+            if (exifSet != null) {
+                byte[] resizedImage = imgOutput.toByteArray();
+                imgOutput.reset();
+                new ExifRewriter().updateExifMetadataLossless(resizedImage, imgOutput, exifSet);
+            }
+
+            DatabaseImage smallImage = new DatabaseImage(image.getId(), image.getMediaType(),
+                    new Binary(GzipUtils.compress(imgOutput.toByteArray())));
+            this.saveIcon(smallImage);
+        }
+    }
 
     public Optional<DatabaseImage> saveAndScale(DatabaseImage image){
 
@@ -96,21 +152,8 @@ public class ProductsImagesRepository {
             if(imgMeta != null) exifSet = imgMeta.getOutputSet();
 
             BufferedImage buffImg = ImageIO.read(new ByteArrayInputStream(image.getImage().getData()));
-            if(buffImg.getHeight() > SMALL_IMAGE_SIZE || buffImg.getWidth() > SMALL_IMAGE_SIZE){
-                buffImg = Scalr.resize(buffImg, SMALL_IMAGE_SIZE);
-                ByteArrayOutputStream imgOutput = new ByteArrayOutputStream();
-                ImageIO.write(buffImg, image.getMediaType().substring(image.getMediaType().indexOf("/") + 1), imgOutput);
-
-                if(exifSet !=null){
-                    byte[] resizedImage = imgOutput.toByteArray();
-                    imgOutput.reset();
-                    new ExifRewriter().updateExifMetadataLossless(resizedImage, imgOutput, exifSet);
-                }
-
-                DatabaseImage smallImage = new DatabaseImage(image.getId(), image.getMediaType(),
-                        new Binary(GzipUtils.compress(imgOutput.toByteArray())));
-                this.saveSmallImage(smallImage);
-            }
+            this.saveAndScaleSmallImage(image, buffImg, exifSet);
+            this.saveAndScaleIcon(image, buffImg, exifSet);
             image.setImage(new Binary(GzipUtils.compress(image.getImage().getData())));
             return Optional.of(this.saveOriginalImage(image));
         } catch (IOException | ImageReadException | ClassCastException | ImageWriteException e) {
@@ -122,6 +165,7 @@ public class ProductsImagesRepository {
     public void deleteProductImages(String id){
         this.mongoTemplate.remove(new Query(Criteria.where("_id").is(id)), SMALL_IMAGES_COL_NAME);
         this.mongoTemplate.remove(new Query(Criteria.where("_id").is(id)), IMAGES_COL_NAME);
+        this.mongoTemplate.remove(new Query(Criteria.where("_id").is(id)), ICON_COL_NAME);
     }
 
 }

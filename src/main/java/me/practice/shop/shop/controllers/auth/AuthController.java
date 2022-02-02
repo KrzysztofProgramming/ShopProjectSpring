@@ -1,9 +1,6 @@
 package me.practice.shop.shop.controllers.auth;
 
-import me.practice.shop.shop.controllers.auth.models.LoginRequest;
-import me.practice.shop.shop.controllers.auth.models.LoginResponse;
-import me.practice.shop.shop.controllers.auth.models.RefreshRequest;
-import me.practice.shop.shop.controllers.auth.models.RegisterRequest;
+import me.practice.shop.shop.controllers.auth.models.*;
 import me.practice.shop.shop.database.users.UsersDatabase;
 import me.practice.shop.shop.models.ErrorResponse;
 import me.practice.shop.shop.models.RefreshToken;
@@ -89,6 +86,11 @@ public class AuthController {
     }
 
 
+    @PostMapping(value="resetPassword")
+    public ResponseEntity<?> resetPassword(@Valid @RequestBody ResetPasswordRequest request){
+        return ResponseEntity.ok().build(); //todo
+    }
+
     private ResponseEntity<?> loginWithUsername(LoginRequest request){
         try {
             authManager.authenticate(new UsernamePasswordAuthenticationToken(
@@ -99,7 +101,7 @@ public class AuthController {
         }
 
         ShopUser user = userDetailsService.getUserByUsername(request.getUsernameOrEmail());
-        RefreshToken refreshToken = refreshTokensService.newRefreshToken(user.getUsername());
+        RefreshToken refreshToken = refreshTokensService.createNewTokenOrRefresh(user.getUsername());
         String jwtToken = jwtUtils.generateToken(user);
 
         return ResponseEntity.ok().body(new LoginResponse(jwtToken, refreshToken.getValue()));

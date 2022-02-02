@@ -1,6 +1,6 @@
 package me.practice.shop.shop.services;
 
-import me.practice.shop.shop.database.tokens.RefreshTokensDatabase;
+import me.practice.shop.shop.database.refreshTokens.RefreshTokensDatabase;
 import me.practice.shop.shop.models.RefreshToken;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -23,6 +23,16 @@ public class RefreshTokensService {
         refreshTokensDatabase.deleteByUsername(username);
         return refreshTokensDatabase.insert(new RefreshToken(UUID.randomUUID().toString(),
                 username, new Date(), calcExpireDate()));
+    }
+
+    public RefreshToken createNewTokenOrRefresh(String username){
+        return this.refreshTokensDatabase.findById(username).orElse(
+                this.refreshTokensDatabase.save(this.createNewToken(username)));
+    }
+
+    private RefreshToken createNewToken(String username){
+        return new RefreshToken(UUID.randomUUID().toString(),
+                username, new Date(), calcExpireDate());
     }
 
     private Date calcExpireDate(){

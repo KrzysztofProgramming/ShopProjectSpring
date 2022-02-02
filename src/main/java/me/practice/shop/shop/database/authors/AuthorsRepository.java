@@ -9,7 +9,7 @@ import java.util.Optional;
 
 @Repository
 public interface AuthorsRepository extends MongoRepository<Author, String>, AuthorsSearcher {
-    Optional<Author> findByName();
+    Optional<Author> findByName(String name);
 
     @Query("{name: {$in: ?0}}")
     Iterable<Author> findAllByNames(Iterable<String> names);

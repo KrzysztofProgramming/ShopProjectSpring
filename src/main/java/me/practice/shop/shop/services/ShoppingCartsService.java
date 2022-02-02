@@ -1,5 +1,6 @@
 package me.practice.shop.shop.services;
 
+import lombok.Getter;
 import me.practice.shop.shop.database.shoppingCarts.ShoppingCartsRepository;
 import me.practice.shop.shop.models.ShoppingCart;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,6 +17,11 @@ public class ShoppingCartsService {
 
     @Value("${application.cart.expirationTime}")
     private long expirationTime; //in days
+
+    @Getter
+    @Value("${application.cart.productsLimit}")
+    private long productsLimit;
+
 
     @Autowired
     private ShoppingCartsRepository cartsRepository;

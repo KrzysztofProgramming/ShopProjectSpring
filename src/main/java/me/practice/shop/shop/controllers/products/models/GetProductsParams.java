@@ -1,6 +1,7 @@
 package me.practice.shop.shop.controllers.products.models;
 
 import lombok.*;
+import me.practice.shop.shop.models.CommonType;
 import me.practice.shop.shop.models.PageableParams;
 
 import java.util.ArrayList;
@@ -25,7 +26,7 @@ public class GetProductsParams extends PageableParams {
     private List<String> types = new ArrayList<>();
 
     public void setTypes(List<String> types){
-        this.types = types.stream().map(String::toLowerCase).collect(Collectors.toList());
+        this.types = types.stream().map(CommonType::toTypeName).collect(Collectors.toList());
     }
 
     private String sort = "";

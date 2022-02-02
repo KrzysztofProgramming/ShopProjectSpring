@@ -164,6 +164,11 @@ public class ProductsController {
         return this.downloadProductImage(this.productsImagesRepository.getSmallImage(productId));
     }
 
+    @GetMapping("downloadProductIcon/{id}")
+    public ResponseEntity<?> downloadProductIcon(@PathVariable("id") String productId){
+        return this.downloadProductImage(this.productsImagesRepository.getIcon(productId));
+    }
+
     private ResponseEntity<?> downloadProductImage(Optional<DatabaseImage> image) {
         if (image.isEmpty())
             return ResponseEntity.badRequest().body(new ErrorResponse("Ten produkt nie ma obrazu"));

@@ -15,11 +15,13 @@ import me.practice.shop.shop.models.BookProduct;
 import me.practice.shop.shop.models.ErrorResponse;
 import me.practice.shop.shop.models.ShopUser;
 import me.practice.shop.shop.models.ShoppingCart;
+import me.practice.shop.shop.services.EmailService;
 import me.practice.shop.shop.services.ShoppingCartsService;
 import me.practice.shop.shop.services.UserDetailsServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
@@ -56,6 +58,10 @@ public class UsersController {
     @Autowired
     private UserDetailsServiceImpl userService;
 
+    @Autowired
+    private EmailService emailService;
+
+
     @PreAuthorize("hasAuthority('users:read')")
     @GetMapping(value = "byUsername/{id}")
     public ResponseEntity<?> getUserById(@PathVariable String id){
@@ -77,6 +83,12 @@ public class UsersController {
         String error = validateUserRequest(request);
         if(!error.isEmpty()) return ResponseEntity.badRequest().body(new ErrorResponse(error));
         return ResponseEntity.ok(toUserResponse(usersDatabase.insert(fromUserRequest(request))));
+    }
+
+    @PostMapping("testEmail")
+    public ResponseEntity<?> sendTestEmail(){
+        emailService.sendTestEmail();
+        return ResponseEntity.ok().build();
     }
 
     @PreAuthorize("hasAuthority('users:write')")
@@ -160,15 +172,15 @@ public class UsersController {
     }
 
     private ResponseEntity<?> modifyCartProduct(CartProductRequest request, ShoppingCart cart){
-//        int previousAmount = cart.getItems().getOrDefault(request.getProductId(), 0);
-
+        if(cart.getItems().size() >= this.cartsService.getProductsLimit())
+            return ResponseEntity.badRequest().body(new ErrorResponse(
+                    "Maksymalna ilość różnych produków w karcie wynosi: "+ this.cartsService.getProductsLimit()));
         Optional<BookProduct> product = this.productsRepository.findById(request.getProductId());
         if(product.isEmpty())
             return ResponseEntity.badRequest().body(new ErrorResponse("Taki produkt nie istnieje"));
         if(product.get().getInStock() < request.getAmount())
             return ResponseEntity.badRequest().body(new ErrorResponse("Podana ilość nie jest już dostępna"));
-
-        cart.getItems().put(request.getProductId(), request.getAmount());
+        cart.getItems().put(product.get().getId(), request.getAmount());
         return ResponseEntity.ok(this.cartsRepository.save(cart));
     }
 
@@ -202,6 +214,28 @@ public class UsersController {
         });
     }
 
+    @DeleteMapping("cart/deleteProduct/{id}")
+    public ResponseEntity<?> deleteCartProduct(@PathVariable String id){
+        return this.ifUserLoggedIn(user->{
+            Optional<ShoppingCart> cart = this.cartsRepository.findById(user.getUsername());
+            if(cart.isEmpty()) return ResponseEntity.ok().build();
+            cart.get().getItems().remove(id);
+            if(cart.get().getItems().size() == 0)
+                this.cartsRepository.deleteById(cart.get().getOwnerUsername());
+            else
+                this.cartsRepository.save(cart.get());
+            return ResponseEntity.ok().body(cart.get());
+        });
+    }
+
+    @DeleteMapping("cart/deleteCart")
+    public ResponseEntity<?> deleteCart(){
+        return this.ifUserLoggedIn(user->{
+            this.cartsRepository.deleteById(user.getUsername());
+            return ResponseEntity.ok().build();
+        });
+    }
+
     @GetMapping("cart/getCart")
     public ResponseEntity<?> getCart(){
         return this.ifUserLoggedIn(user-> ResponseEntity.ok(this.cartsService.getAndRenew(user.getUsername())));
@@ -210,11 +244,11 @@ public class UsersController {
     private ResponseEntity<?> ifUserLoggedIn(Function<ShopUser, ResponseEntity<?>> fn){
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if(auth==null){
-            return ResponseEntity.badRequest().body(new ErrorResponse("Użytkownik niezalogowany"));
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ErrorResponse("Użytkownik niezalogowany"));
         }
         Optional<ShopUser> user = this.usersDatabase.findById((String) auth.getPrincipal());
         if(user.isEmpty()) {
-            return ResponseEntity.badRequest().body(new ErrorResponse("Użytkownik nie istnieje"));
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ErrorResponse("Użytkownik nie istnieje"));
         }
         return fn.apply(user.get());
     }

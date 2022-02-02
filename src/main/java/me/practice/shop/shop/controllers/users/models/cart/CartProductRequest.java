@@ -5,7 +5,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.Positive;
+import javax.validation.constraints.PositiveOrZero;
 
 @Data
 @AllArgsConstructor
@@ -13,6 +13,6 @@ import javax.validation.constraints.Positive;
 public class CartProductRequest {
     @NotBlank
     private String productId;
-    @Positive
+    @PositiveOrZero
     private Integer amount;
 }
