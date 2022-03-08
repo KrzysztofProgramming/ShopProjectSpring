@@ -41,11 +41,15 @@ public class ShoppingCartsService {
         return cart;
     }
 
+    public void clearUserCart(String username){
+        this.cartsRepository.deleteById(username);
+    }
+
     public ShoppingCart cartFromRequest(String username, Map<String, Integer> products){
         return new ShoppingCart(username, products, calcExpirationTime());
     }
 
-    @Scheduled(fixedDelay = 1000 * 60, initialDelay = 0)
+    @Scheduled(fixedDelay = 1000 * 60 * 60, initialDelay = 0)
     private void removeExpiredCarts(){
         cartsRepository.deleteByExpireDateLessThan(new Date());
     }

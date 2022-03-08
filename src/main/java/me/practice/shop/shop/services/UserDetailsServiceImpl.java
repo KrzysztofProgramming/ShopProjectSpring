@@ -4,7 +4,6 @@ import me.practice.shop.shop.database.users.RolesRepository;
 import me.practice.shop.shop.database.users.UsersDatabase;
 import me.practice.shop.shop.models.Role;
 import me.practice.shop.shop.models.ShopUser;
-import me.practice.shop.shop.permissions.Permissions;
 import me.practice.shop.shop.utils.IterableUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.GrantedAuthority;
@@ -37,11 +36,11 @@ public class UserDetailsServiceImpl implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        ShopUser user = username.equals("admin") ? new ShopUser("admin", "admin@gmail.com",
-                encoder.encode("admin"), List.of(new Role("admin",
-                Permissions.fromNumber(0b1111111111111).stream().map(Permissions::toString)
-                        .collect(Collectors.toList())))) : getUserByUsername(username);
-        //todo remove this during production
+//        ShopUser user = username.equals("admin") ? new ShopUser("admin", "admin@gmail.com",
+//                encoder.encode("admin"), List.of(new Role("admin",
+//                Permissions.fromNumber(0b1111111111111).stream().map(Permissions::toString)
+//                        .collect(Collectors.toList())))) : getUserByUsername(username);
+        ShopUser user = getUserByUsername(username);
         return User.builder()
                 .username(user.getUsername())
                 .password(user.getPassword())

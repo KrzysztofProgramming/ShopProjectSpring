@@ -4,6 +4,7 @@ import lombok.*;
 import me.practice.shop.shop.models.CommonType;
 import me.practice.shop.shop.models.PageableParams;
 
+import javax.validation.constraints.PositiveOrZero;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -17,11 +18,11 @@ public class GetProductsParams extends PageableParams {
 
     private String searchPhrase = "";
 
-//    @PositiveOrZero
-    private Double minPrice = -1.d;
+    @PositiveOrZero
+    private Double minPrice = null;
 
-//    @PositiveOrZero
-    private Double maxPrice = -1.d;
+    @PositiveOrZero
+    private Double maxPrice = null;
 
     private List<String> types = new ArrayList<>();
 
@@ -33,6 +34,8 @@ public class GetProductsParams extends PageableParams {
 
     private List<String> authorsNames = new ArrayList<>();
 
-    private Integer minInStock = -1;
-    private Integer maxInStock = -1;
+    @PositiveOrZero
+    private Integer minInStock = null;
+    @PositiveOrZero
+    private Integer maxInStock = null;
 }

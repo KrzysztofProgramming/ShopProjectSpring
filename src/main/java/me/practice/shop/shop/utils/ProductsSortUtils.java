@@ -11,17 +11,13 @@ public class ProductsSortUtils {
     private ProductsSortUtils() {}
 
     public static Sort getSort(String name){
-        switch(name){
-            case PRICE_ASC:
-                return Sort.by(Sort.Direction.ASC, "price");
-            case PRICE_DESC:
-                return Sort.by(Sort.Direction.DESC, "price");
-            case ALPHABETIC_ASC:
-                return Sort.by(Sort.Direction.ASC, "name");
-            case ALPHABETIC_DESC:
-                return Sort.by(Sort.Direction.DESC, "name");
-            default: return Sort.unsorted();
-        }
+        return switch (name) {
+            case PRICE_ASC -> Sort.by(Sort.Direction.ASC, "price");
+            case PRICE_DESC -> Sort.by(Sort.Direction.DESC, "price");
+            case ALPHABETIC_ASC -> Sort.by(Sort.Direction.ASC, "name");
+            case ALPHABETIC_DESC -> Sort.by(Sort.Direction.DESC, "name");
+            default -> Sort.unsorted();
+        };
     }
 
     public static boolean isEmpty(String sortName){

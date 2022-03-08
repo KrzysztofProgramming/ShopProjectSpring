@@ -1,7 +1,9 @@
 package me.practice.shop.shop.models;
 
 import lombok.Data;
+import org.bson.types.ObjectId;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.util.Objects;
@@ -12,9 +14,15 @@ public class CommonType {
     public static final String COLLECTION_NAME = "common_types_list";
 
     @Id
+    private ObjectId id;
+
+    @Indexed(unique = true)
     private String name;
 
-    public CommonType(String name) {
+    private int productsCount;
+
+    public CommonType(String name, int productsCount) {
+        this.productsCount = productsCount;
         this.setName(name);
     }
 

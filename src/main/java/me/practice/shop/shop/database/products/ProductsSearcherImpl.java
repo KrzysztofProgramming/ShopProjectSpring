@@ -1,6 +1,8 @@
 package me.practice.shop.shop.database.products;
 
+import com.mongodb.bulk.BulkWriteResult;
 import me.practice.shop.shop.controllers.products.models.GetProductsParams;
+import me.practice.shop.shop.database.Searcher;
 import me.practice.shop.shop.models.BookProduct;
 import me.practice.shop.shop.utils.ProductsSortUtils;
 import org.apache.logging.log4j.util.Strings;
@@ -8,15 +10,20 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.mongodb.core.BulkOperations;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
-import org.springframework.data.mongodb.core.query.CriteriaDefinition;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.TextQuery;
+import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.data.support.PageableExecutionUtils;
 
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+
 @SuppressWarnings("unused")
-public class ProductsSearcherImpl implements ProductsSearcher {
+public class ProductsSearcherImpl extends Searcher implements ProductsSearcher {
     @Autowired
     private MongoTemplate mongoTemplate;
 
@@ -42,12 +49,30 @@ public class ProductsSearcherImpl implements ProductsSearcher {
                 () -> mongoTemplate.count(Query.of(query).limit(-1).skip(-1), BookProduct.class));
     }
 
+    @Override
+    public boolean allExistByIds(Collection<String> ids) {
+        return this.mongoTemplate.count(Query.query(Criteria.where("id").in(ids)), BookProduct.class) == ids.size();
+    }
+
+    @Override
+    public BulkWriteResult decreaseProductsCounts(Map<String, Integer> productsCounts) {
+        BulkOperations operation = this.mongoTemplate.bulkOps(BulkOperations.BulkMode.UNORDERED, BookProduct.class);
+        productsCounts.forEach((key, value) -> operation.updateOne(Query.query(Criteria.where("id").is(key)),
+                new Update().inc("inStock", -value)));
+        return operation.execute();
+    }
+
+    @Override
+    public boolean allProductsAvailable(Map<String, Integer> amounts) {
+        if(amounts.isEmpty()) return false;
+        List<BookProduct> products= this.mongoTemplate.find(Query.query(Criteria.where("id").in(amounts.keySet())),
+                BookProduct.class);
+        return products.stream().allMatch(product->product.getInStock() >= amounts.get(product.getId()));
+    }
+
+
     private Criteria generatePriceCriteria(GetProductsParams params){
-        return params.getMinPrice() >=0 ?
-                Criteria.where("price").gte(params.getMinPrice()) :
-                params.getMaxPrice() >= 0 ?
-                        Criteria.where("price").lte(params.getMaxPrice()) :
-                        null;
+        return this.maxMinCriteria("price", params.getMaxPrice(), params.getMinPrice());
     }
 
     private Criteria generateAuthorsCriteria(GetProductsParams params){
@@ -55,16 +80,8 @@ public class ProductsSearcherImpl implements ProductsSearcher {
                 Criteria.where("authorsNames").elemMatch(new Criteria().in(params.getAuthorsNames()));
     }
 
-    private Query applyCriteria(Query query, CriteriaDefinition criteria){
-        return criteria==null ? query : query.addCriteria(criteria);
-    }
-
     private Criteria generateStockCriteria(GetProductsParams params){
-        return params.getMinInStock() >=0 ?
-                Criteria.where("inStock").gte(params.getMinInStock()) :
-                params.getMaxInStock() >= 0 ?
-                        Criteria.where("inStock").lte(params.getMaxInStock()) :
-                        null;
+        return this.maxMinCriteria("inStock", params.getMaxInStock(), params.getMinInStock());
     }
 
     private Criteria generateTypesCriteria(GetProductsParams params){

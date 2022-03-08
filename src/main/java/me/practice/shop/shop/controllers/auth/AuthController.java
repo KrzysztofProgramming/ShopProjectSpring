@@ -1,15 +1,19 @@
 package me.practice.shop.shop.controllers.auth;
 
 import me.practice.shop.shop.controllers.auth.models.*;
+import me.practice.shop.shop.controllers.perms.models.RoleResponse;
 import me.practice.shop.shop.database.users.UsersDatabase;
 import me.practice.shop.shop.models.ErrorResponse;
 import me.practice.shop.shop.models.RefreshToken;
+import me.practice.shop.shop.models.ResetPasswordToken;
 import me.practice.shop.shop.models.ShopUser;
 import me.practice.shop.shop.services.RefreshTokensService;
+import me.practice.shop.shop.services.ResetTokensService;
 import me.practice.shop.shop.services.UserDetailsServiceImpl;
 import me.practice.shop.shop.utils.JwtUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.mail.MailException;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -18,9 +22,11 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
+import javax.mail.MessagingException;
 import javax.validation.Valid;
 import java.util.Collections;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @RestController
 @CrossOrigin(origins = "*", maxAge = 3600)
@@ -45,6 +51,9 @@ public class AuthController {
     @Autowired
     private RefreshTokensService refreshTokensService;
 
+    @Autowired
+    private ResetTokensService resetTokensService;
+
     @PostMapping(value = "register")
     public ResponseEntity<?> register(@Valid @RequestBody RegisterRequest request){
         if(usersDatabase.existsById(request.getUsername()))
@@ -53,7 +62,7 @@ public class AuthController {
             return ResponseEntity.badRequest().body(new ErrorResponse("Email already taken"));
 
         usersDatabase.insert(new ShopUser(request.getUsername(), request.getEmail(),
-                encoder.encode(request.getPassword()), Collections.emptyList()));
+                encoder.encode(request.getPassword()), Collections.emptyList(), null));
 
         return loginWithUsername(new LoginRequest(request.getUsername(), request.getPassword()));
     }
@@ -69,13 +78,13 @@ public class AuthController {
 
     @PostMapping(value = "refresh")
     public ResponseEntity<?> refreshToken(@Valid @RequestBody RefreshRequest request){
-        Optional<RefreshToken> token = refreshTokensService.renewToken(request.getRefreshToken());
+        Optional<RefreshToken> token = refreshTokensService.getAndRenew(request.getRefreshToken());
         if(token.isEmpty())
             return ResponseEntity.badRequest().body(new ErrorResponse("Wrong refresh token"));
 
         ShopUser user = userDetailsService.getUserByUsername(token.get().getUsername());
         return ResponseEntity.ok().body(new LoginResponse(jwtUtils.generateToken(user),
-                token.get().getValue()));
+                token.get().getValue(), user.getRoles().stream().map(RoleResponse::new).collect(Collectors.toList())));
     }
 
     @PostMapping(value = "logout")
@@ -86,9 +95,38 @@ public class AuthController {
     }
 
 
+    @PostMapping(value="forgotPassword")
+    public ResponseEntity<?> onForgotPassword(@Valid @RequestBody ForgotPasswordRequest request){
+        Optional<ShopUser> user = this.usersDatabase.findByEmail(request.getEmail());
+        if(user.isEmpty())
+            return ResponseEntity.badRequest().body(new ErrorResponse("Brak użytkownika o podanym emailu"));
+        try {
+            this.resetTokensService.generateTokenAndSendEmail(user.get().getUsername(), user.get().getEmail());
+        }
+        catch (MailException | MessagingException e){
+            return ResponseEntity.badRequest().body(new ErrorResponse("Nie udało się wysłać emaila"));
+        }
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping(value="isResetTokenValid")
+    public ResponseEntity<?> checkResetTokenValidity(@Valid @RequestBody ResetTokenValidationRequest request){
+       return this.resetTokensService.tokenExist(request.getToken()) ?
+               ResponseEntity.ok().build() : ResponseEntity.badRequest().body(
+                       new ErrorResponse("Zły token"));
+    }
+
     @PostMapping(value="resetPassword")
     public ResponseEntity<?> resetPassword(@Valid @RequestBody ResetPasswordRequest request){
-        return ResponseEntity.ok().build(); //todo
+        Optional<ResetPasswordToken> token = this.resetTokensService.getTokenByValue(request.getToken());
+          if(token.isEmpty()) return ResponseEntity.badRequest().body(new ErrorResponse("Błędny token"));
+        this.resetTokensService.deleteToken(request.getToken());
+        return this.usersDatabase.findById(token.get().getOwnerUsername())
+                .map(user->{
+                    user.setPassword(this.encoder.encode(request.getNewPassword()));
+                    this.usersDatabase.save(user);
+                    return ResponseEntity.ok().build();
+                }).orElse(ResponseEntity.badRequest().build());
     }
 
     private ResponseEntity<?> loginWithUsername(LoginRequest request){
@@ -101,9 +139,10 @@ public class AuthController {
         }
 
         ShopUser user = userDetailsService.getUserByUsername(request.getUsernameOrEmail());
-        RefreshToken refreshToken = refreshTokensService.createNewTokenOrRefresh(user.getUsername());
+        RefreshToken refreshToken = refreshTokensService.createNewTokenOrRenew(user.getUsername());
         String jwtToken = jwtUtils.generateToken(user);
 
-        return ResponseEntity.ok().body(new LoginResponse(jwtToken, refreshToken.getValue()));
+        return ResponseEntity.ok().body(new LoginResponse(jwtToken, refreshToken.getValue(),
+                user.getRoles().stream().map(RoleResponse::new).collect(Collectors.toList())));
     }
 }

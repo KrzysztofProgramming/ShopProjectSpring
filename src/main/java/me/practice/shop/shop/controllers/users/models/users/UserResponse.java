@@ -12,6 +12,6 @@ import java.util.Collection;
 public class UserResponse {
     private String username;
     private String email;
-    private Collection<String> authorities;
+    private long authorities;
     private Collection<String> roles;
 }

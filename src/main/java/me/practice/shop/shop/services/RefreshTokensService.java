@@ -25,9 +25,12 @@ public class RefreshTokensService {
                 username, new Date(), calcExpireDate()));
     }
 
-    public RefreshToken createNewTokenOrRefresh(String username){
-        return this.refreshTokensDatabase.findById(username).orElse(
-                this.refreshTokensDatabase.save(this.createNewToken(username)));
+    public RefreshToken createNewTokenOrRenew(String username){
+        Optional<RefreshToken> token = this.refreshTokensDatabase.findByUsername(username).map(value->{
+                value.setExpireDate(this.calcExpireDate());
+                return this.refreshTokensDatabase.save(value);
+                });
+        return token.isEmpty() ? this.refreshTokensDatabase.save(this.createNewToken(username)) : token.get();
     }
 
     private RefreshToken createNewToken(String username){
@@ -40,7 +43,7 @@ public class RefreshTokensService {
                 + expirationTime * 1000 * 60 * 60 * 24);
     }
 
-    public Optional<RefreshToken> renewToken(String tokenValue){
+    public Optional<RefreshToken> getAndRenew(String tokenValue){
         return refreshTokensDatabase.findById(tokenValue)
                 .map(token ->{
                     if(token.getExpireDate().before(new Date())){

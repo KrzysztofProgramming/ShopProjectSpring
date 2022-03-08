@@ -9,10 +9,9 @@ import java.util.stream.Collectors;
 public enum Permissions {
     NO_PERMISSION(0, ""),
     PRODUCTS_WRITE(1, "products:write"),
-    USERS_WRITE(1<<1, "users:write"),
-    USERS_READ(1<<2, "users:read"),
-    ROLES_READ(1<<3, "roles:read"),
-    ROLES_WRITE(1<<4, "roles:write");
+    USERS_READ(1<<1, "users:read"),
+    USERS_WRITE(1<<2, "users:write"),
+    ROLES_WRITE(1<<3, "roles:write");
 
     @Getter
     private final long numberValue;
@@ -30,12 +29,16 @@ public enum Permissions {
                 .findAny().orElse(NO_PERMISSION);
     }
 
-    public static Collection<Permissions> fromNumber(long value){
+    public static Collection<String> fromNumber(long value){
         return Arrays.stream(Permissions.values())
                 .filter(perm -> perm.isInValue(value))
+                .map(Permissions::toString)
                 .collect(Collectors.toSet());
     }
 
+    public static long allPerms(){
+        return (1<<10) - 1;
+    }
 
     public static long toNumber(Collection<String> permissions){
        return permissions.stream().map(perm -> Permissions.fromString(perm).getNumberValue())

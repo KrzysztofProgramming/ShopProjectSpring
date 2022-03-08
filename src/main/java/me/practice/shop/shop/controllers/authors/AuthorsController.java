@@ -70,12 +70,19 @@ public class AuthorsController {
         return this.authorsManager.updateAuthor(id, request);
     }
 
+    @PreAuthorize("hasAuthority('products:write')")
+    @PutMapping(value = "recalcWrittenBooks")
+    public ResponseEntity<?> recalcWrittenBooks(){
+
+        return ResponseEntity.ok().body(this.authorsManager.recalcWrittenBooks());
+    }
+
     private Author newAuthor(AuthorRequest request){
         return this.fromRequest(UUID.randomUUID().toString(), request);
     }
 
     private Author fromRequest(String id, AuthorRequest request){
-        return new Author(id, request.getName(), request.getDescription());
+        return new Author(id, request.getName(), request.getDescription(), 0);
     }
 
 

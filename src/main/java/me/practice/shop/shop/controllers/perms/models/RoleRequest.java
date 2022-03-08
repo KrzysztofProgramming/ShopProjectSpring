@@ -4,9 +4,8 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import javax.validation.constraints.Min;
 import javax.validation.constraints.NotEmpty;
-import javax.validation.constraints.NotNull;
-import java.util.Collection;
 
 @Data
 @NoArgsConstructor
@@ -15,6 +14,13 @@ public class RoleRequest {
     @NotEmpty
     private String name;
 
-    @NotNull
-    private Collection<String> authorities;
+    @Min(0)
+    private double order = -1;
+
+    @Min(0)
+    private long authorities = -1;
+
+    public void setName(String name) {
+        this.name = name.toLowerCase();
+    }
 }

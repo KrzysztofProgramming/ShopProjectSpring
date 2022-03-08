@@ -20,4 +20,8 @@ public interface ProductsRepository extends MongoRepository<BookProduct, String>
 
     @Query("{authors: {$elemMatch: {$in: ?0}}}")
     Iterable<BookProduct> getByAuthorsIds(Iterable<DBRef> authorsIds);
+
+    @Query(value = "{types: {$elemMatch: {$in: [?0]}}}", count = true)
+    long countByType(String type);
+
 }

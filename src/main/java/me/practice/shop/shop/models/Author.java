@@ -24,12 +24,16 @@ public class Author {
 
     private String description;
 
+    private int writtenBooks;
+
     @TextScore
     private float textScore;
 
-    public Author(String id, String name, String description) {
+
+    public Author(String id, String name, String description, int writtenBooks) {
         this.id = id;
         this.name = name;
         this.description = description;
+        this.writtenBooks = writtenBooks;
     }
 }

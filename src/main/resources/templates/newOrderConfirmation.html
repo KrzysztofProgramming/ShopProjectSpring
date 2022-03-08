@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="pl" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Potwierdzenie złożenia zamówienia</title>
+    <meta charset="UTF-8">
+    <style>
+        body{
+            margin: 0;
+            position: relative;
+        }
+
+        p{
+            margin: 0;
+        }
+
+        .background{
+            background-image: url('https://i.imgur.com/WIvbCOv.jpg');
+            background-size: cover;
+            background-repeat: no-repeat;
+            position: absolute;
+            top:0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: -1;
+        }
+
+        .content{
+            background-color: rgba(0, 0, 0, 0.5);
+            width: 100%
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 10px;
+        }
+
+        .header{
+            color: white;
+            font-size: 24px;
+            padding: 10px;
+            text-align: center;
+        }
+
+        .info{
+            color: white;
+            font-size: 18px;
+            margin: 10px 0 10px 0;
+        }
+
+        .summary{
+            background-color: rgba(255, 255, 255, 0.9);
+            padding: 7px;
+            box-shadow: 0 0 1px 0 #777777;
+            border-radius: 1px;
+            display: flex;
+            flex-direction: column;
+            font-size: 17px;
+        }
+
+        .items:nth-child(2n){
+            background-color: rgba(0, 0, 0, 0.08);
+        }
+
+        .items{
+            display: flex;
+            flex-direction: row;
+            padding: 7px;
+            border-radius: 2px;
+        }
+
+        .item{
+            flex: 1;
+            padding-right: 10px;
+            text-align: center;
+        }
+
+        .name{
+            flex: 5
+        }
+
+        .price{
+            flex: 3
+        }
+
+        .amount{
+            flex: 2;
+        }
+
+        .total{
+            font-size: 20px;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="background"></div>
+    <main class="content">
+        <p class="header">Witaj <span th:text=" ' ' + ${order.info.firstname}">Zbyszek</span></p>
+        <p class="info">Twoje zamówienie zostało przyjęte do realizacji,
+            poniżej znajduje się jego podsumowanie:</p>
+        <div class="summary">
+            <div class="items">
+                <div class="item name">Nazwa:</div>
+                <div class="item price">Cena:</div>
+                <div class="item amount">Ilość:</div>
+            </div>
+            <div class="items" th:each="item : ${products}">
+                <div class="item name" th:text="${item.product.name}">Wojownicy</div>
+                <div class="item price" th:text="${#numbers.formatDecimal(item.product.price, 0, 'DEFAULT', 2, 'POINT')} + ' zł'">1232.00 zł</div>
+                <div class="item amount" th:text="${item.amount}">23</div>
+            </div>
+            <div class="items total">
+                <div class="item name">Łącznie:</div>
+                <div class="item price" th:text="${#numbers.formatDecimal(totalPrice, 0, 'DEFAULT', 2, 'POINT')} + ' zł'"></div>
+                <div class="item amount" th:text="${totalAmount}"></div>
+            </div>
+        </div>
+    </main>
+</body>
+
+</html>

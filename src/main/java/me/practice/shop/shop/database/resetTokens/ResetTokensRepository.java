@@ -6,6 +6,7 @@ import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.data.mongodb.repository.Query;
 import org.springframework.stereotype.Repository;
 
+import java.util.Date;
 import java.util.Optional;
 
 @Repository
@@ -16,4 +17,6 @@ public interface ResetTokensRepository extends MongoRepository<ResetPasswordToke
 
     @DeleteQuery(value = "{ownerUsername: ?0}")
     void deleteByUsername(String username);
+
+    void deleteByExpireDateLessThan(Date date);
 }

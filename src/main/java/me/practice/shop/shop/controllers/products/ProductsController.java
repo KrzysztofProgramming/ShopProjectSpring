@@ -1,17 +1,22 @@
 package me.practice.shop.shop.controllers.products;
 
 import me.practice.shop.shop.controllers.authors.AuthorsManager;
-import me.practice.shop.shop.controllers.authors.models.AuthorRequest;
+import me.practice.shop.shop.controllers.products.events.BeforeProductCreateEvent;
+import me.practice.shop.shop.controllers.products.events.BeforeProductDeleteEvent;
+import me.practice.shop.shop.controllers.products.events.BeforeProductUpdateEvent;
 import me.practice.shop.shop.controllers.products.models.*;
 import me.practice.shop.shop.database.files.DatabaseImage;
+import me.practice.shop.shop.database.products.CommonTypesRepository;
 import me.practice.shop.shop.database.products.ProductsRepository;
 import me.practice.shop.shop.models.Author;
 import me.practice.shop.shop.models.BookProduct;
 import me.practice.shop.shop.models.ErrorResponse;
 import me.practice.shop.shop.models.GetByParamsResponse;
+import me.practice.shop.shop.utils.IterableUtils;
 import me.practice.shop.shop.utils.MediaTypeUtils;
 import org.bson.types.Binary;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -50,6 +55,12 @@ public class ProductsController {
     @Autowired
     private TypesManager typesManager;
 
+    @Autowired
+    private CommonTypesRepository typesRepository;
+
+    @Autowired
+    private ApplicationEventPublisher eventPublisher;
+
     @GetMapping(value = "getAll")
     public ResponseEntity<?> getProducts(@Valid GetProductsParams params) {
         Page<BookProduct> productPage = this.productsRepository.findByParams(params);
@@ -57,6 +68,7 @@ public class ProductsController {
         return ResponseEntity.ok(new GetByParamsResponse<>(productPage.getNumber() + 1, productPage.getTotalPages(),
                 productPage.getTotalElements(), responsePage.toList()));
     }
+
 
     @GetMapping(value = "byId/{id}")
     public ResponseEntity<?> getProductById(@PathVariable String id) {
@@ -74,7 +86,12 @@ public class ProductsController {
 
     @GetMapping(value = "getTypes")
     public ResponseEntity<?> getTypes(){
-        return ResponseEntity.ok(new TypesResponse(this.typesManager.getTypesAsStrings()));
+        return ResponseEntity.ok(new TypesResponse(IterableUtils.toList(this.typesManager.getTypesAsStrings())));
+    }
+
+    @GetMapping(value = "getTypesWithCount")
+    public ResponseEntity<?> getTypesWithCount(){
+        return ResponseEntity.ok(this.typesRepository.findAll());
     }
 
     @PreAuthorize("hasAuthority('products:write')")
@@ -86,9 +103,17 @@ public class ProductsController {
     @PreAuthorize("hasAuthority('products:write')")
     @PostMapping(value = "newProduct")
     public ResponseEntity<?> addProduct(@Valid @RequestBody ProductRequest request) {
-        return this.validateProductRequest(request, (authors, types)->
-                ResponseEntity.ok().body(new ProductResponse(
-                productsRepository.insert(this.newProduct(request, authors, types)))));
+        return this.validateProductRequest(request, (authors, types)->{
+            this.eventPublisher.publishEvent(new BeforeProductCreateEvent(this, request));
+            return ResponseEntity.ok().body(new ProductResponse(
+            productsRepository.insert(this.newProduct(request, authors, types))));
+        });
+    }
+
+    @PreAuthorize("hasAuthority('products:write')")
+    @PutMapping(value="recalcTypesCounters")
+    public ResponseEntity<?> recalcTypesCounters(){
+        return ResponseEntity.ok().body(this.typesManager.recalcTypesCounters());
     }
 
     @PreAuthorize("hasAuthority('products:write')")
@@ -96,7 +121,7 @@ public class ProductsController {
     public ResponseEntity<?> updateProduct(@PathVariable String id, @Valid @RequestBody ProductRequest request) {
         return this.validateProductRequest(request, (authors, types)-> productsRepository.findById(id)
                 .map(product -> {
-                    this.typesManager.addNewTypes(request.getTypes());
+                    this.eventPublisher.publishEvent(new BeforeProductUpdateEvent(this, request, product));
                     return ResponseEntity.ok((Object) new ProductResponse(
                             productsRepository.save(this.fromRequest(product.getId(), request, authors, types))));
                 }).orElse(ResponseEntity.badRequest().body(productNotExistsInfo)));
@@ -114,19 +139,12 @@ public class ProductsController {
     }
 
     @PreAuthorize("hasAuthority('products:write')")
-    @PutMapping(value = "updateAuthor/{id}")
-    public ResponseEntity<?> updateAuthor(@PathVariable String id, @Valid @RequestBody AuthorRequest request) {
-        return this.authorsManager.updateAuthor(id, request);
-    }
-
-    @PreAuthorize("hasAuthority('products:write')")
     @DeleteMapping(value = "deleteProduct/{id}")
     public ResponseEntity<?> deleteProduct(@PathVariable String id) {
         BookProduct removingProduct = this.productsRepository.findById(id).orElse(null);
         if(removingProduct==null) return ResponseEntity.ok().build();
+        this.eventPublisher.publishEvent(new BeforeProductDeleteEvent(this, removingProduct));
         productsRepository.deleteById(id);
-        this.typesManager.checkForRemovingTypes(removingProduct);
-        this.authorsManager.checkForDeletingAuthors(removingProduct);
         this.productsImagesRepository.deleteProductImages(id);
         return ResponseEntity.ok().build();
     }

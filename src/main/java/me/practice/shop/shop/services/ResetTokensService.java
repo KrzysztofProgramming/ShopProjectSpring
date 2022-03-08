@@ -4,15 +4,19 @@ import me.practice.shop.shop.database.resetTokens.ResetTokensRepository;
 import me.practice.shop.shop.models.ResetPasswordToken;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Controller;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.thymeleaf.TemplateEngine;
+import org.thymeleaf.context.Context;
 
+import javax.mail.MessagingException;
+import javax.mail.internet.MimeMessage;
 import java.util.Date;
+import java.util.Optional;
 import java.util.UUID;
 
-@Controller
 @Service
 public class ResetTokensService {
 
@@ -24,6 +28,9 @@ public class ResetTokensService {
 
     @Autowired
     private TemplateEngine templateEngine;
+
+    @Autowired
+    private JavaMailSender mailSender;
 
     public ResetPasswordToken generateNewToken(String username){
         this.tokensRepository.deleteByUsername(username);
@@ -39,6 +46,10 @@ public class ResetTokensService {
         this.tokensRepository.deleteByUsername(username);
     }
 
+    public Optional<ResetPasswordToken> getTokenByValue(String token){
+        return this.tokensRepository.findById(token);
+    }
+
     public void deleteToken(String token){
         this.tokensRepository.deleteById(token);
     }
@@ -47,8 +58,28 @@ public class ResetTokensService {
         return new Date(System.currentTimeMillis() + tokenExpirationTime * 60 * 1000);
     }
 
-    @GetMapping(value = "siema")
-    public String test(){
-        return "passwordResetTemplate.html";
+    public void generateTokenAndSendEmail(String username, String email) throws MessagingException {
+        ResetPasswordToken token = this.generateNewToken(username);
+        Context context = new Context();
+        context.setVariable("link", "http://localhost:4200/resetPassword/" + token.getToken());
+        context.setVariable("username", username);
+        context.setVariable("image", "image");
+        String html = this.templateEngine.process("passwordResetTemplate", context);
+        this.sendEmail(email, html);
+    }
+
+    private void sendEmail(String userEmail, String content) throws MessagingException {
+        MimeMessage message = mailSender.createMimeMessage();
+        MimeMessageHelper helper = new MimeMessageHelper(message,true, "utf-8");
+        helper.setSubject("Reset hasła w BookShop");
+        helper.setFrom("noreplay@bookshop.com");
+        helper.setTo(userEmail);
+        helper.setText(content, true);
+        mailSender.send(message);
+    }
+
+    @Scheduled(fixedDelay = 1000 * 60 * 60, initialDelay = 0)
+    private void clearExpiredToken(){
+        this.tokensRepository.deleteByExpireDateLessThan(new Date());
     }
 }
