@@ -5,15 +5,15 @@ import org.springframework.data.mongodb.core.query.CriteriaDefinition;
 import org.springframework.data.mongodb.core.query.Query;
 
 public class Searcher {
-    protected Query applyCriteria(Query query, CriteriaDefinition criteria){
+    public static Query applyCriteria(Query query, CriteriaDefinition criteria){
         return criteria==null ? query : query.addCriteria(criteria);
     }
 
-    protected Criteria maxMinCriteria(String fieldName, Object maxValue, Object minValue){
+    public static Criteria maxMinCriteria(String fieldName, Object maxValue, Object minValue){
         if(maxValue==null && minValue == null) return null;
         Criteria criteria = Criteria.where(fieldName);
         if(maxValue != null) criteria.lte(maxValue);
-        if(minValue != null) criteria.gt(minValue);
+        if(minValue != null) criteria.gte(minValue);
         return criteria;
     }
 }

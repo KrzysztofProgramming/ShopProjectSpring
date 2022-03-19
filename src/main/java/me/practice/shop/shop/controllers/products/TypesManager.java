@@ -5,8 +5,8 @@ import com.mongodb.client.DistinctIterable;
 import me.practice.shop.shop.controllers.products.events.BeforeProductCreateEvent;
 import me.practice.shop.shop.controllers.products.events.BeforeProductDeleteEvent;
 import me.practice.shop.shop.controllers.products.events.BeforeProductUpdateEvent;
-import me.practice.shop.shop.database.products.CommonTypesRepository;
 import me.practice.shop.shop.database.products.ProductsRepository;
+import me.practice.shop.shop.database.products.types.CommonTypesRepository;
 import me.practice.shop.shop.models.BookProduct;
 import me.practice.shop.shop.models.CommonType;
 import me.practice.shop.shop.models.ErrorResponse;
@@ -151,6 +151,15 @@ public class TypesManager {
         return StreamSupport.stream(this.typesRepository.getAllByNames(names.stream()
                 .map(CommonType::toTypeName).collect(Collectors.toList())).spliterator(), false)
                 .map(CommonType::getName).collect(Collectors.toList());
+    }
+
+    public ResponseEntity<?> updateType(String name, String newName){
+        if(this.mongoTemplate.exists(Query.query(Criteria.where("name").is(newName)), CommonType.class)){
+            return ResponseEntity.badRequest().body(new ErrorResponse("Produkt z taką nazwą już istnieje"));
+        }
+        this.mongoTemplate.updateFirst(Query.query(Criteria.where("name").is(name)), Update.update("name", newName),
+                CommonType.class);
+        return ResponseEntity.ok().build();
     }
 
 }

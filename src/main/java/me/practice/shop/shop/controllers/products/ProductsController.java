@@ -6,12 +6,9 @@ import me.practice.shop.shop.controllers.products.events.BeforeProductDeleteEven
 import me.practice.shop.shop.controllers.products.events.BeforeProductUpdateEvent;
 import me.practice.shop.shop.controllers.products.models.*;
 import me.practice.shop.shop.database.files.DatabaseImage;
-import me.practice.shop.shop.database.products.CommonTypesRepository;
 import me.practice.shop.shop.database.products.ProductsRepository;
-import me.practice.shop.shop.models.Author;
-import me.practice.shop.shop.models.BookProduct;
-import me.practice.shop.shop.models.ErrorResponse;
-import me.practice.shop.shop.models.GetByParamsResponse;
+import me.practice.shop.shop.database.products.types.CommonTypesRepository;
+import me.practice.shop.shop.models.*;
 import me.practice.shop.shop.utils.IterableUtils;
 import me.practice.shop.shop.utils.MediaTypeUtils;
 import org.bson.types.Binary;
@@ -89,6 +86,14 @@ public class ProductsController {
         return ResponseEntity.ok(new TypesResponse(IterableUtils.toList(this.typesManager.getTypesAsStrings())));
     }
 
+    @PreAuthorize("hasAuthority('products:write')")
+    @GetMapping(value="getTypesDetails")
+    public ResponseEntity<?> getTypesDetails(@Valid GetTypesParams params){
+        Page<CommonType> result = this.typesRepository.findByParams(params);
+        return ResponseEntity.ok(new GetByParamsResponse<>(result.getNumber(),
+                result.getTotalPages(), result.getTotalElements(), result.getContent()));
+    }
+
     @GetMapping(value = "getTypesWithCount")
     public ResponseEntity<?> getTypesWithCount(){
         return ResponseEntity.ok(this.typesRepository.findAll());
@@ -98,6 +103,19 @@ public class ProductsController {
     @PostMapping(value = "newType")
     public ResponseEntity<?> createNewType(@Valid @RequestBody TypeRequest request){
         return this.typesManager.addNewType(request.getName());
+    }
+
+    @PreAuthorize("hasAuthority('products:write')")
+    @PutMapping(value = "updateType/{name}")
+    public ResponseEntity<?> updateType(@PathVariable String name, @RequestBody @Valid TypeRequest request){
+        return this.typesManager.updateType(name, request.getName());
+    }
+
+    @PreAuthorize("hasAuthority('products:write')")
+    @DeleteMapping(value = "deleteType/{name}")
+    public ResponseEntity<?> deleteType(@PathVariable String name){
+        this.typesRepository.deleteByName(name);
+        return ResponseEntity.ok().build();
     }
 
     @PreAuthorize("hasAuthority('products:write')")

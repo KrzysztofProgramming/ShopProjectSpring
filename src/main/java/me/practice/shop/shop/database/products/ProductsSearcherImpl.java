@@ -72,7 +72,7 @@ public class ProductsSearcherImpl extends Searcher implements ProductsSearcher {
 
 
     private Criteria generatePriceCriteria(GetProductsParams params){
-        return this.maxMinCriteria("price", params.getMaxPrice(), params.getMinPrice());
+        return maxMinCriteria("price", params.getMaxPrice(), params.getMinPrice());
     }
 
     private Criteria generateAuthorsCriteria(GetProductsParams params){
@@ -81,7 +81,7 @@ public class ProductsSearcherImpl extends Searcher implements ProductsSearcher {
     }
 
     private Criteria generateStockCriteria(GetProductsParams params){
-        return this.maxMinCriteria("inStock", params.getMaxInStock(), params.getMinInStock());
+        return maxMinCriteria("inStock", params.getMaxInStock(), params.getMinInStock());
     }
 
     private Criteria generateTypesCriteria(GetProductsParams params){

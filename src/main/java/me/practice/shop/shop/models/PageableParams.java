@@ -12,7 +12,7 @@ import javax.validation.constraints.Positive;
 public class PageableParams {
 
     @Positive
-    private Integer pageSize = 25;
+    private Integer pageSize = 20;
 
     @Positive
     private Integer pageNumber = 1;

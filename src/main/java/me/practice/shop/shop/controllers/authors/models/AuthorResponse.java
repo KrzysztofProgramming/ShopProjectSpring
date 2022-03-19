@@ -10,8 +10,9 @@ public class AuthorResponse {
     private String id;
     private String name;
     private String description;
+    private Integer writtenBooks;
 
     public AuthorResponse(Author author){
-        this(author.getId(), author.getName(), author.getDescription());
+        this(author.getId(), author.getName(), author.getDescription(), author.getWrittenBooks());
     }
 }

@@ -114,10 +114,15 @@ public class AuthorsManager {
     }
 
     private void updateAuthorNameInProducts(Author oldAuthor, Author newAuthor){
-        Query query = Query.query(Criteria.where("authorsNames").elemMatch(new Criteria().is(oldAuthor.getName())));
-        UpdateDefinition updateDefinition = new Update().pull("authorsNames", oldAuthor.getName())
-                .push("authorsNames", newAuthor.getName());
-        this.mongoTemplate.updateMulti(query, updateDefinition, BookProduct.class);
+        Query query = Query.query(Criteria.where("authors").elemMatch(new Criteria().in(
+                new DBRef(Author.COLLECTION_NAME, oldAuthor.getId()))));
+        UpdateDefinition update = new Update().set("authorsNames.$[elem]", newAuthor.getName())
+                .filterArray(Criteria.where("elem").is(oldAuthor.getName()));
+//        BulkOperations operations = this.mongoTemplate.bulkOps(BulkOperations.BulkMode.ORDERED, BookProduct.class);
+//        operations.updateMulti(query, new Update().pull("authorsNames", oldAuthor.getName()));
+//        operations.updateMulti(query, new Update().push("authorsNames", newAuthor.getName()));
+//        operations.execute();
+        this.mongoTemplate.updateMulti(query, update, BookProduct.class);
     }
 
     public String recalcWrittenBooks(){
