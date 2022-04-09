@@ -59,8 +59,8 @@ public class OrdersService {
 
     public boolean payOrder(String id){
        return this.mongoTemplate.updateFirst(Query.query(Criteria.where("id").is(id)
-                       .and("status").is(ShopOrder.UNPAID)),new Update().set("isPaid", true),
-               ShopOrder.class).wasAcknowledged();
+                       .and("status").is(ShopOrder.UNPAID)), new Update().set("status", ShopOrder.PAID),
+               ShopOrder.class).getModifiedCount() > 0;
     }
 
     public boolean hasUnpaidOrder(String email){

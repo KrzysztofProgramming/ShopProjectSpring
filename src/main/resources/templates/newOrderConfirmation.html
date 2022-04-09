@@ -90,6 +90,31 @@
             font-size: 20px;
         }
 
+        .bottom{
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .link-button{
+            outline: none;
+            border: unset;
+            padding: 0.5em;
+            font-size: 20px;
+            border-radius: 3px;
+            background-color: #4caf50;
+            color: black;
+            cursor: pointer;
+            transition-duration: 200ms;
+            text-decoration: none;
+        }
+
+        .link-button:hover{
+           background-color: #38913c;
+        }
+
     </style>
 </head>
 <body>
@@ -114,6 +139,11 @@
                 <div class="item price" th:text="${#numbers.formatDecimal(totalPrice, 0, 'DEFAULT', 2, 'POINT')} + ' zł'"></div>
                 <div class="item amount" th:text="${totalAmount}"></div>
             </div>
+        </div>
+        <div class="bottom">
+            <a class="link-button" target="_blank" th:href="'http://localhost:4200/payOrder/' + ${order.id}">
+                Zapłać teraz
+            </a>
         </div>
     </main>
 </body>

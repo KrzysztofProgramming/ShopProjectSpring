@@ -27,7 +27,9 @@ public class ShopOrder {
     private String email;
     private UserInfo info;
     private Map<String, Integer> products;
+    @Indexed
     private Date issuedDate;
+    @Indexed
     private double totalPrice;
     @Indexed
     private int status;

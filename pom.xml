@@ -10,6 +10,7 @@
 	</parent>
 	<groupId>me.practice.shop</groupId>
 	<artifactId>shop</artifactId>
+	<packaging>jar</packaging>
 	<version>0.0.1-SNAPSHOT</version>
 	<name>Shop</name>
 	<description>Practice shop project</description>
@@ -122,6 +123,7 @@
 							<artifactId>lombok</artifactId>
 						</exclude>
 					</excludes>
+					<mainClass>me.practice.shop.shop.ShopApplication</mainClass>
 				</configuration>
 			</plugin>
 		</plugins>

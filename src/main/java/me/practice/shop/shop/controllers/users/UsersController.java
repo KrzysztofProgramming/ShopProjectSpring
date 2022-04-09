@@ -151,13 +151,22 @@ public class UsersController {
         });
     }
 
+    @GetMapping("profile/order/{id}")
+    public ResponseEntity<?> getUserOrder(@PathVariable String id){
+        return this.functions.ifUserLoggedIn(user->{
+            Optional<ShopOrder> order = this.ordersRepository.findUserOrderById(user.getUsername(), id);
+            if(order.isPresent()) return ResponseEntity.ok(order);
+            return ResponseEntity.badRequest().body(new ErrorResponse("Użytkownik nie posiada takiego zamówienia"));
+        });
+    }
+
     @GetMapping("profile/orders")
     public ResponseEntity<?> getUserOrders(@Valid GetOrdersParams params){
         return this.functions.ifUserLoggedIn(user ->{
 //            return ResponseEntity.ok(new GetByParamsResponse<>())
             Page<ShopOrder> page = this.ordersRepository.getByParams(params, user.getUsername());
             return ResponseEntity.ok(new GetByParamsResponse<>(
-                    page.getNumber(), page.getTotalPages(), page.getTotalElements(), page.getContent()));
+                    page.getNumber() + 1, page.getTotalPages(), page.getTotalElements(), page.getContent()));
         });
 
     }

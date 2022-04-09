@@ -90,7 +90,7 @@ public class ProductsController {
     @GetMapping(value="getTypesDetails")
     public ResponseEntity<?> getTypesDetails(@Valid GetTypesParams params){
         Page<CommonType> result = this.typesRepository.findByParams(params);
-        return ResponseEntity.ok(new GetByParamsResponse<>(result.getNumber(),
+        return ResponseEntity.ok(new GetByParamsResponse<>(result.getNumber() + 1,
                 result.getTotalPages(), result.getTotalElements(), result.getContent()));
     }
 

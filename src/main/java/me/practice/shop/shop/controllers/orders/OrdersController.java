@@ -4,7 +4,6 @@ import me.practice.shop.shop.controllers.orders.models.NewOrderRequest;
 import me.practice.shop.shop.controllers.orders.models.PayOrderRequest;
 import me.practice.shop.shop.database.orders.OrdersRepository;
 import me.practice.shop.shop.database.products.ProductsRepository;
-import me.practice.shop.shop.database.users.UsersDatabase;
 import me.practice.shop.shop.models.*;
 import me.practice.shop.shop.services.FunctionsService;
 import me.practice.shop.shop.services.OrdersService;
@@ -21,9 +20,6 @@ import java.util.stream.Collectors;
 @CrossOrigin(origins = "*", maxAge = 3600)
 @RequestMapping(value = "api/orders/")
 public class OrdersController {
-
-    @Autowired
-    private UsersDatabase usersDatabase;
 
     @Autowired
     private OrdersRepository ordersRepository;

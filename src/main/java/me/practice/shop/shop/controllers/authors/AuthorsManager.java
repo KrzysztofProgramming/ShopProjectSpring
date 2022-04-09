@@ -42,7 +42,7 @@ import static org.springframework.data.mongodb.core.aggregation.Aggregation.matc
 @Component
 public class AuthorsManager {
     @Getter
-    private ErrorResponse authorNotExistsInfo = new ErrorResponse("Brak autora o danym id");
+    private final ErrorResponse authorNotExistsInfo = new ErrorResponse("Brak autora o danym id");
 
     @Autowired
     private AuthorsRepository authorsRepository;
