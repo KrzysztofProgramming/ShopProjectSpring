@@ -1,7 +1,6 @@
 package me.practice.shop.shop.controllers.orders;
 
 import me.practice.shop.shop.controllers.orders.models.NewOrderRequest;
-import me.practice.shop.shop.controllers.orders.models.PayOrderRequest;
 import me.practice.shop.shop.database.orders.OrdersRepository;
 import me.practice.shop.shop.database.products.ProductsRepository;
 import me.practice.shop.shop.models.*;
@@ -55,9 +54,15 @@ public class OrdersController {
         return ResponseEntity.ok().body(order);
     }
 
-    @PutMapping("payOrder")
-    public ResponseEntity<?> payOrder(@Valid @RequestBody PayOrderRequest request){
-        return this.ordersService.payOrder(request.getId()) ? ResponseEntity.ok().build() :
+    @PutMapping("payOrder/{id}")
+    public ResponseEntity<?> payOrder(@PathVariable String id){
+        return this.ordersService.payOrder(id) ? ResponseEntity.ok().build() :
+                ResponseEntity.badRequest().body(new ErrorResponse("Brak zamówienia o podanym id"));
+    }
+
+    @PutMapping("cancelOrder/{id}")
+    public ResponseEntity<?> cancelOrder(@PathVariable String id){
+        return this.ordersService.cancelOrder(id) ? ResponseEntity.ok().build() :
                 ResponseEntity.badRequest().body(new ErrorResponse("Brak zamówienia o podanym id"));
     }
 

@@ -8,6 +8,7 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
 
@@ -59,9 +60,11 @@ public class ResetTokensService {
     }
 
     public void generateTokenAndSendEmail(String username, String email) throws MessagingException {
+        final String baseUrl =
+                ServletUriComponentsBuilder.fromCurrentContextPath().build().toUriString();
         ResetPasswordToken token = this.generateNewToken(username);
         Context context = new Context();
-        context.setVariable("link", "http://localhost:4200/resetPassword/" + token.getToken());
+        context.setVariable("link",baseUrl + "/resetPassword/" + token.getToken());
         context.setVariable("username", username);
         context.setVariable("image", "image");
         String html = this.templateEngine.process("passwordResetTemplate", context);

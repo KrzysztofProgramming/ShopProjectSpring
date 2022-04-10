@@ -13,6 +13,7 @@ import org.springframework.mail.MailException;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
 
@@ -34,7 +35,10 @@ public class OrdersService {
 
     public boolean sendEmail(ShopOrder order, List<OrderProductDetail> details){
         Context context = new Context();
+        final String baseUrl =
+                ServletUriComponentsBuilder.fromCurrentContextPath().build().toUriString();
         OrderParams params = this.getOrderParams(details);
+        context.setVariable("link", baseUrl + "/payOrder/" + order.getId());
         context.setVariable("order", order);
         context.setVariable("products", details);
         context.setVariable("totalPrice", params.getTotalPrice());
@@ -66,6 +70,12 @@ public class OrdersService {
     public boolean hasUnpaidOrder(String email){
         return this.mongoTemplate.exists(Query.query(Criteria.where("email").is(email)
                 .and("status").is(ShopOrder.UNPAID)), ShopOrder.class);
+    }
+
+    public boolean cancelOrder(String id){
+        return this.mongoTemplate.updateFirst(Query.query(Criteria.where("id").is(id)
+                .and("status").is(ShopOrder.UNPAID)), new Update().set("status", ShopOrder.CANCELLED),
+                ShopOrder.class).getModifiedCount() > 0;
     }
 
 
