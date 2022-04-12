@@ -12,3 +12,6 @@ To order some products or reset a password mail service listening on port 1025 i
 - JWT authorization
 - Roles
 - storing data and in MongoDB cloud
+
+## To do:
+-Create second version of the app using PostgreSQL instead of MongoDB
