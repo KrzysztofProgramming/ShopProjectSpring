@@ -1,0 +1,55 @@
+[{
+  "_id": "admin",
+  "authorities": [
+    "products:write",
+    "roles:write",
+    "users:write",
+    "users:read"
+  ],
+  "_class": "me.practice.shop.shop.models.Role",
+  "strength": 0
+},{
+  "_id": "moderator",
+  "authorities": [
+    "users:read",
+    "products:write",
+    "users:write"
+  ],
+  "_class": "me.practice.shop.shop.models.Role",
+  "strength": 1
+},{
+  "_id": "helper",
+  "authorities": [
+    "products:write",
+    "users:write"
+  ],
+  "_class": "me.practice.shop.shop.models.Role",
+  "strength": 2
+},{
+  "_id": "products manager",
+  "authorities": [
+    "products:write"
+  ],
+  "_class": "me.practice.shop.shop.models.Role",
+  "strength": 3
+},{
+  "_id": "roles manager",
+  "authorities": [
+    "users:read",
+    "products:write",
+    "users:write",
+    "roles:write"
+  ],
+  "_class": "me.practice.shop.shop.models.Role",
+  "strength": 0.5
+},{
+  "_id": "roles submanager",
+  "authorities": [
+    "users:read",
+    "products:write",
+    "users:write",
+    "roles:write"
+  ],
+  "_class": "me.practice.shop.shop.models.Role",
+  "strength": 0.7
+}]
