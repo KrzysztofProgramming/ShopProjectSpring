@@ -14,4 +14,4 @@ To order some products or reset a password mail service listening on local port 
 - storing data and in MongoDB cloud
 
 ## To do:
--Create second version of the app using PostgreSQL instead of MongoDB
+- Create second version of the app using PostgreSQL instead of MongoDB
