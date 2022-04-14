@@ -2,8 +2,11 @@
 Project made with Spring boot and MongoDB compiled with jdk 16  
 Frontend code is available here: https://github.com/KrzysztofProgramming/ShopProjectAngular
 
-## Running an app shop-project.jar
-command: **java -jar shop-project.jar**
+## compiling:
+Command: **mvn install**
+
+## Running an app
+command: **java -jar [jar-name].jar**
 
 MongoDB server running on **localhost:27017** is required to launch the server.  
 To order some products or reset a password mail service listening on local port **1025** is required.
