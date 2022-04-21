@@ -1,25 +1,27 @@
 package me.practice.shop.shop.models;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.index.Indexed;
-import org.springframework.data.mongodb.core.mapping.Document;
+import lombok.*;
 
+import javax.persistence.Entity;
+import javax.persistence.Id;
+import javax.persistence.Index;
+import javax.persistence.Table;
 import java.util.Date;
 
-@Document("refresh_token_database")
 @Data
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @AllArgsConstructor
+@NoArgsConstructor
+@Builder
+@Entity
+@Table(name = RefreshToken.TABLE_NAME, indexes = @Index(name = "index_username", columnList = "username"))
 public class RefreshToken {
+    public static final String TABLE_NAME = "refresh_tokens_table";
+
     @Id
     @EqualsAndHashCode.Include
     private String value;
-    @Indexed(unique = true)
     private String username;
     private Date issuedDate;
     private Date expireDate;
-
 }

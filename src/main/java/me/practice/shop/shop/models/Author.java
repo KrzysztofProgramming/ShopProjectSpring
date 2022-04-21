@@ -1,39 +1,29 @@
 package me.practice.shop.shop.models;
 
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.index.Indexed;
-import org.springframework.data.mongodb.core.index.TextIndexed;
-import org.springframework.data.mongodb.core.mapping.Document;
-import org.springframework.data.mongodb.core.mapping.TextScore;
+import lombok.*;
 
+import javax.persistence.*;
+
+@Entity
 @Data
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
-@Document(Author.COLLECTION_NAME)
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+@Table(name = Author.TABLE_NAME, uniqueConstraints = @UniqueConstraint(columnNames = "name", name = "uk_author_name"))
 public class Author {
-    public final static String COLLECTION_NAME = "authors_list";
+    public final static String TABLE_NAME = "authors_table";
 
     @Id
-    @EqualsAndHashCode.Include
-    private String id;
+    @SequenceGenerator(name = "author_sequence", sequenceName = "author_sequence", allocationSize = 1)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "author_sequence")
+    @Column(name = "author_id")
+    private Long id;
 
-    @TextIndexed
-    @Indexed(unique = true)
     private String name;
 
     private String description;
 
-    private int writtenBooks;
-
-    @TextScore
-    private float textScore;
-
-
-    public Author(String id, String name, String description, int writtenBooks) {
-        this.id = id;
-        this.name = name;
-        this.description = description;
-        this.writtenBooks = writtenBooks;
-    }
+    @Transient
+    private Integer writtenBooks;
 }

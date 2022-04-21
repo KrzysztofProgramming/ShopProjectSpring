@@ -1,28 +1,28 @@
 package me.practice.shop.shop.models;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.index.Indexed;
-import org.springframework.data.mongodb.core.mapping.Document;
+import lombok.*;
 
+import javax.persistence.Entity;
+import javax.persistence.Id;
+import javax.persistence.Index;
+import javax.persistence.Table;
 import java.util.Date;
 
 @Data
 @AllArgsConstructor
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
-@Document(ResetPasswordToken.COLLECTION_NAME)
+@NoArgsConstructor
+@Builder
+@Entity
+@Table(name = ResetPasswordToken.TABLE_NAME,
+        indexes = @Index(name = "index_owner_username", columnList = "ownerUsername"))
 public class ResetPasswordToken {
-    public final static String COLLECTION_NAME = "reset_tokens_collection";
+    public final static String TABLE_NAME = "reset_tokens_table";
 
     @Id
     @EqualsAndHashCode.Include
     private String token;
-
-    @Indexed(unique = true)
     private String ownerUsername;
-
     private Date issuedDate;
     private Date expireDate;
 }

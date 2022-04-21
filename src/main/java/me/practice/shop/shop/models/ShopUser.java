@@ -1,39 +1,39 @@
 package me.practice.shop.shop.models;
 
-import lombok.Data;
-import lombok.EqualsAndHashCode;
+import lombok.*;
 import me.practice.shop.shop.permissions.Permissions;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.index.Indexed;
-import org.springframework.data.mongodb.core.index.TextIndexed;
-import org.springframework.data.mongodb.core.mapping.DBRef;
-import org.springframework.data.mongodb.core.mapping.Document;
-import org.springframework.data.mongodb.core.mapping.TextScore;
 
+import javax.persistence.*;
 import java.util.Collection;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Data
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
-@Document(ShopUser.COLLECTION_NAME)
+@AllArgsConstructor
+@NoArgsConstructor
+@Builder
+@Entity
+@Table(name = ShopUser.TABLE_NAME, indexes = {
+        @Index(name = "index_email", columnList = "email")
+})
 public class ShopUser {
 
-    public static final String COLLECTION_NAME = "users_database";
+    public static final String TABLE_NAME = "users_table";
 
     @Id
     @EqualsAndHashCode.Include
-    @TextIndexed
     private String username;
-    @Indexed(unique = true)
     private String email;
     private String password;
-    @DBRef
+    @ManyToMany(fetch = FetchType.EAGER, cascade = CascadeType.MERGE)
+    @JoinTable(name = "users_roles",
+            joinColumns = @JoinColumn(name = "fk_user"),
+            inverseJoinColumns = @JoinColumn(name="fk_role")
+    )
     private Collection<Role> roles;
+    @Embedded
     private UserInfo userInfo;
-
-    @TextScore
-    private float textScore;
 
     public Collection<String> getRolesStrings(){
         return roles.stream().map(Role::toString).collect(Collectors.toList());
@@ -57,13 +57,5 @@ public class ShopUser {
 
     public long getAuthoritiesNumber(){
         return Permissions.toNumber(getAuthorities());
-    }
-
-    public ShopUser(String username, String email, String password, Collection<Role> roles, UserInfo userInfo) {
-        this.username = username;
-        this.email = email;
-        this.password = password;
-        this.roles = roles;
-        this.userInfo = userInfo;
     }
 }

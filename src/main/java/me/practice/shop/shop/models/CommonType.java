@@ -1,27 +1,33 @@
 package me.practice.shop.shop.models;
 
-import lombok.Data;
-import org.bson.types.ObjectId;
+import lombok.*;
 import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.index.Indexed;
-import org.springframework.data.mongodb.core.index.TextIndexed;
-import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.annotation.Transient;
 
-import java.util.Objects;
+import javax.persistence.*;
 
+
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @Data
-@Document(CommonType.COLLECTION_NAME)
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor
+@Entity
+@Table(name = CommonType.TABLE_NAME,
+        uniqueConstraints = @UniqueConstraint(name = "uk_type_name", columnNames = "name"))
 public class CommonType {
-    public static final String COLLECTION_NAME = "common_types_list";
+    public static final String TABLE_NAME = "type_table";
 
     @Id
-    private ObjectId id;
+    @SequenceGenerator(name="type_sequence", sequenceName = "type_sequence", allocationSize = 1)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "type_sequence")
+    @EqualsAndHashCode.Include
+    private Long id;
 
-    @Indexed(unique = true)
-    @TextIndexed()
     private String name;
 
-    private int productsCount;
+    @Transient
+    private Integer productsCount = null;
 
     public CommonType(String name, int productsCount) {
         this.productsCount = productsCount;
@@ -37,18 +43,5 @@ public class CommonType {
             return raw;
         }
         return Character.toUpperCase(raw.charAt(0)) + raw.substring(1).toLowerCase();
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        CommonType that = (CommonType) o;
-        return Objects.equals(name.toLowerCase(), that.name.toLowerCase());
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(name.toLowerCase());
     }
 }

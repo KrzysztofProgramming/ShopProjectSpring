@@ -4,6 +4,8 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import javax.persistence.Embeddable;
+import javax.persistence.Embedded;
 import javax.validation.Valid;
 import javax.validation.constraints.Max;
 import javax.validation.constraints.Min;
@@ -13,6 +15,7 @@ import javax.validation.constraints.NotNull;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
+@Embeddable
 public class UserInfo {
     @NotBlank
     private String firstname;
@@ -23,5 +26,6 @@ public class UserInfo {
     private long phoneNumber;
     @NotNull
     @Valid
+    @Embedded
     private Address address;
 }

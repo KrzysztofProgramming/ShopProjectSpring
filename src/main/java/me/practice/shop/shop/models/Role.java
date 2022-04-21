@@ -1,25 +1,31 @@
 package me.practice.shop.shop.models;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
+import lombok.*;
 import me.practice.shop.shop.permissions.Permissions;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.index.Indexed;
-import org.springframework.data.mongodb.core.mapping.Document;
 
+import javax.persistence.*;
 import java.util.Collection;
 
 @Data
 @AllArgsConstructor
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
-@Document("roles")
+@Entity
+@NoArgsConstructor
+@Builder
+@Table(name = Role.TABLE_NAME, indexes = @Index(name = "index_strength", columnList = "strength"))
 public class Role {
+    public static final String TABLE_NAME = "roles_table";
+
     @Id
     @EqualsAndHashCode.Include
     private String name;
+
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(
+            name = "role_authorities",
+            joinColumns = @JoinColumn(name="role_name", referencedColumnName = "name"))
+    @Column(name="authority")
     private Collection<String> authorities;
-    @Indexed(unique = true)
     private double strength;
 
     public Collection<String> getAuthorities() {
