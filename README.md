@@ -28,5 +28,5 @@ password: *admin*
 - orders history
 - storing and scaling products' images up to 3 resolutions
 
-## To do:
-- Create second version of the app using PostgreSQL instead of MongoDB
+## In progress:
+- Migration to PostgreSQL on sql_dev branch
