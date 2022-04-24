@@ -1,6 +1,7 @@
 package me.practice.shop.shop.models;
 
 import lombok.*;
+import org.hibernate.annotations.Type;
 
 import javax.persistence.Entity;
 import javax.persistence.Id;
@@ -21,6 +22,7 @@ public class ResetPasswordToken {
 
     @Id
     @EqualsAndHashCode.Include
+    @Type(type = "uuid-char")
     private String token;
     private String ownerUsername;
     private Date issuedDate;

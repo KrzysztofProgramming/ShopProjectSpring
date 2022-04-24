@@ -1,27 +1,26 @@
 package me.practice.shop.shop.database.products;
 
-import com.mongodb.DBRef;
 import me.practice.shop.shop.models.BookProduct;
-import org.springframework.data.mongodb.repository.MongoRepository;
-import org.springframework.data.mongodb.repository.Query;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
+import java.util.Collection;
 import java.util.Optional;
 
 @Repository
-public interface ProductsRepository extends MongoRepository<BookProduct, String>, ProductsSearcher {
+public interface ProductsRepository extends JpaRepository<BookProduct, Long> {
     Optional<BookProduct> findByName(String name);
 
-    @Query("{authors: {$elemMatch: {$id: ?0}}}")
-    Iterable<BookProduct> getByAuthorId(String authorId);
+    @Query(value = "SELECT b FROM #{#entityName} b LEFT JOIN b.authors a WHERE a.id = ?1")
+    Collection<BookProduct> getByAuthorId(Long authorId);
 
-    @Query("{types: {$elemMatch: {$in: ?0}}}")
-    Iterable<BookProduct> getByTypes(Iterable<String> types);
+    @Query(value = "SELECT b FROM #{#entityName} b LEFT JOIN b.types t WHERE t.name IN ?1")
+    Collection<BookProduct> getByTypes(Collection<String> typesNames);
 
-    @Query("{authors: {$elemMatch: {$in: ?0}}}")
-    Iterable<BookProduct> getByAuthorsIds(Iterable<DBRef> authorsIds);
+    @Query(value = "SELECT b FROM #{#entityName} b LEFT JOIN b.authors a WHERE a.id IN ?1")
+    Collection<BookProduct> getByAuthorsIds(Collection<Long> authorsIds);
 
-    @Query(value = "{types: {$elemMatch: {$in: [?0]}}}", count = true)
+    @Query(value = "SELECT COUNT(b) FROM #{#entityName} b LEFT JOIN b.types t WHERE t.name = ?1")
     long countByType(String type);
-
 }

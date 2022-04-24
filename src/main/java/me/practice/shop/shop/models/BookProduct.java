@@ -38,6 +38,12 @@ public class BookProduct {
     )
     private Collection<Author> authors;
 
+    @ManyToMany(cascade = {CascadeType.MERGE}, fetch = FetchType.EAGER)
+    @JoinTable(
+            name = "books_types",
+            joinColumns = @JoinColumn(name = "fk_book"),
+            inverseJoinColumns = @JoinColumn(name = "fk_type")
+    )
     private Collection<CommonType> types;
 
     private Integer inStock;

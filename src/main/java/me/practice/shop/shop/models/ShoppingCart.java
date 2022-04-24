@@ -2,10 +2,7 @@ package me.practice.shop.shop.models;
 
 import lombok.*;
 
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.Index;
-import javax.persistence.Table;
+import javax.persistence.*;
 import java.util.Date;
 import java.util.Map;
 
@@ -23,6 +20,11 @@ public class ShoppingCart {
     @EqualsAndHashCode.Include
     private String ownerUsername;
 
-    private Map<String, Integer> items;
+    @ElementCollection
+    @CollectionTable(name = "cart_products_ids",
+            joinColumns = @JoinColumn(name = "cart_id", referencedColumnName = "ownerUsername"))
+    @MapKeyColumn(name = "product_id")
+    @Column(name = "product_count")
+    private Map<Long, Integer> items;
     private Date expireDate;
 }

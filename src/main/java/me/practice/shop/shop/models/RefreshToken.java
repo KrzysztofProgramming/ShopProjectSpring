@@ -1,6 +1,7 @@
 package me.practice.shop.shop.models;
 
 import lombok.*;
+import org.hibernate.annotations.Type;
 
 import javax.persistence.Entity;
 import javax.persistence.Id;
@@ -20,6 +21,7 @@ public class RefreshToken {
 
     @Id
     @EqualsAndHashCode.Include
+    @Type(type = "uuid-char")
     private String value;
     private String username;
     private Date issuedDate;

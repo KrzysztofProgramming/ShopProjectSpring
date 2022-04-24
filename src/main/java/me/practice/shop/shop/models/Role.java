@@ -26,7 +26,7 @@ public class Role {
             joinColumns = @JoinColumn(name="role_name", referencedColumnName = "name"))
     @Column(name="authority")
     private Collection<String> authorities;
-    private double strength;
+    private Double strength;
 
     public Collection<String> getAuthorities() {
         return this.strength == 0 ? Permissions.fromNumber(Permissions.allPerms()) : authorities;
