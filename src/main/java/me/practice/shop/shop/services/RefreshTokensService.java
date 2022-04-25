@@ -21,7 +21,7 @@ public class RefreshTokensService {
 
     public RefreshToken newRefreshToken(String username){
         refreshTokensDatabase.deleteByUsername(username);
-        return refreshTokensDatabase.insert(new RefreshToken(UUID.randomUUID().toString(),
+        return refreshTokensDatabase.save(new RefreshToken(UUID.randomUUID().toString(),
                 username, new Date(), calcExpireDate()));
     }
 

@@ -17,7 +17,7 @@ public interface OrdersRepository extends JpaRepository<ShopOrder, Long> {
     @Query(value = "SELECT o FROM #{#entityName} o WHERE o.ownerUsername = ?1")
     Page<ShopOrder> findByOwnerUsername(String username, Pageable pageable);
 
-    @Query(value = "SELECT o FROM #{entityName} o WHERE o.id = ?2 AND o.ownerUsername = ?1")
+    @Query(value = "SELECT o FROM #{#entityName} o WHERE o.id = ?2 AND o.ownerUsername = ?1")
     Optional<ShopOrder> findUserOrderById(String username, String id);
 
     @Modifying(flushAutomatically = true, clearAutomatically = true)

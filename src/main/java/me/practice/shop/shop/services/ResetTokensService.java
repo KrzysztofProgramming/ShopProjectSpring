@@ -34,8 +34,8 @@ public class ResetTokensService {
     private JavaMailSender mailSender;
 
     public ResetPasswordToken generateNewToken(String username){
-        this.tokensRepository.deleteByUsername(username);
-        return this.tokensRepository.insert(new ResetPasswordToken(UUID.randomUUID().toString(), username,
+        this.tokensRepository.deleteByOwnerUsername(username);
+        return this.tokensRepository.save(new ResetPasswordToken(UUID.randomUUID().toString(), username,
                 new Date(), this.calcExpirationTime()));
     }
 
@@ -44,7 +44,7 @@ public class ResetTokensService {
     }
 
     public void deleteTokenByUsername(String username){
-        this.tokensRepository.deleteByUsername(username);
+        this.tokensRepository.deleteByOwnerUsername(username);
     }
 
     public Optional<ResetPasswordToken> getTokenByValue(String token){

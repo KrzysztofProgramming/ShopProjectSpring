@@ -20,10 +20,10 @@ public interface AuthorsRepository extends JpaRepository<Author, Long> {
     @Query(value = "SELECT a FROM #{#entityName} a WHERE a.name = ?1")
     Optional<Author> findByName(String name);
 
-    @Query(value = "SELECT a WHERE #{#entityName} a WHERE a.name in ?1")
+    @Query(value = "SELECT a FROM #{#entityName} a WHERE a.name IN ?1")
     Set<Author> findAllByNames(Collection<String> names);
 
-    @Query(value = "SELECT DISTINCT a.name FROM #{#entityName}")
+    @Query(value = "SELECT DISTINCT a.name FROM #{#entityName} a")
     Collection<String> getAuthorsNames();
 
     @Transactional
@@ -35,6 +35,6 @@ public interface AuthorsRepository extends JpaRepository<Author, Long> {
     int countAuthorBooks(Long authorId);
 
     @Query(value = "SELECT NEW me.practice.shop.shop.controllers.authors.models.SimpleAuthor(a.id, a.name) " +
-            "FROM #{#entityName}")
+            "FROM #{#entityName} a")
     List<SimpleAuthor> getSimpleAuthorsList();
 }

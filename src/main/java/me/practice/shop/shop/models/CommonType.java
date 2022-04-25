@@ -2,7 +2,6 @@ package me.practice.shop.shop.models;
 
 import lombok.*;
 import org.hibernate.annotations.Formula;
-import org.springframework.data.annotation.Id;
 
 import javax.persistence.*;
 
@@ -30,6 +29,7 @@ public class CommonType {
 
     @Basic(fetch = FetchType.LAZY)
     @Formula(value = "(SELECT COUNT(*)) FROM books_types bt WHERE bt.fk_type = type_id")
+    @Builder.Default
     private Integer productsCount = null;
 
     public CommonType(String name) {

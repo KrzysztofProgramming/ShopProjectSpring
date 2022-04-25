@@ -7,7 +7,6 @@ import me.practice.shop.shop.database.products.ProductsRepository;
 import me.practice.shop.shop.database.products.types.CommonTypesRepository;
 import me.practice.shop.shop.models.*;
 import me.practice.shop.shop.utils.MediaTypeUtils;
-import org.bson.types.Binary;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
@@ -119,20 +118,17 @@ public class ProductsController {
     @PreAuthorize("hasAuthority('products:write')")
     @PostMapping(value = "newProduct")
     public ResponseEntity<?> addProduct(@Valid @RequestBody ProductRequest request) {
-        return this.validateProductRequest(request, (authors, types)->{
-            return ResponseEntity.ok().body(new ProductResponse(
-            this.productsRepository.save(this.newProduct(request, authors, types))));
-        });
+        return this.validateProductRequest(request, (authors, types)-> ResponseEntity.ok().body(new ProductResponse(
+        this.productsRepository.save(this.newProduct(request, authors, types)))));
     }
 
     @PreAuthorize("hasAuthority('products:write')")
     @PutMapping(value = "updateProduct/{id}")
     public ResponseEntity<?> updateProduct(@PathVariable Long id, @Valid @RequestBody ProductRequest request) {
         return this.validateProductRequest(request, (authors, types)-> productsRepository.findById(id)
-                .map(product -> {
-                    return ResponseEntity.ok((Object) new ProductResponse(
-                            productsRepository.save(this.fromRequest(product.getId(), request, authors, types))));
-                }).orElse(ResponseEntity.badRequest().body(productNotExistsInfo)));
+                .map(product -> ResponseEntity.ok((Object) new ProductResponse(
+                        productsRepository.save(this.fromRequest(product.getId(), request, authors, types)))))
+                .orElse(ResponseEntity.badRequest().body(productNotExistsInfo)));
     }
 
     private ResponseEntity<?> validateProductRequest(ProductRequest request,
@@ -167,7 +163,7 @@ public class ProductsController {
         if (!MediaTypeUtils.isImageTypeOK(fileType)) {
             return ResponseEntity.badRequest().body(new ErrorResponse("Zły typ pliku"));
         }
-        productsImagesRepository.saveAndScale(new DatabaseImage(productId, fileType, new Binary(file.getBytes())));
+        productsImagesRepository.saveAndScale(new DatabaseImage(productId, fileType, file.getBytes()));
         return ResponseEntity.ok().build();
     }
 
@@ -199,7 +195,7 @@ public class ProductsController {
             return ResponseEntity.badRequest().body(new ErrorResponse("Ten produkt nie ma obrazu"));
         return ResponseEntity.ok()
                 .contentType(MediaType.valueOf(image.get().getMediaType()))
-                .body(image.get().getImage().getData());
+                .body(image.get().getImage());
     }
 
     private BookProduct newProduct(ProductRequest request, Set<Author> authors, Set<String> types) {

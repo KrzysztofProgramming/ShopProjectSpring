@@ -16,7 +16,7 @@ import java.util.stream.Collectors;
 @Builder
 @Entity
 @Table(name = ShopUser.TABLE_NAME, indexes = {
-        @Index(name = "index_email", columnList = "email")
+        @Index(name = "index_user_email", columnList = "email")
 })
 public class ShopUser {
 

@@ -10,7 +10,6 @@ import org.apache.commons.imaging.formats.jpeg.JpegImageMetadata;
 import org.apache.commons.imaging.formats.jpeg.exif.ExifRewriter;
 import org.apache.commons.imaging.formats.tiff.TiffImageMetadata;
 import org.apache.commons.imaging.formats.tiff.write.TiffOutputSet;
-import org.bson.types.Binary;
 import org.imgscalr.Scalr;
 import org.springframework.stereotype.Repository;
 
@@ -114,7 +113,7 @@ public class ProductsImagesRepository {
             }
 
             DatabaseImage smallImage = new DatabaseImage(image.getId(), image.getMediaType(),
-                    new Binary(GzipUtils.compress(imgOutput.toByteArray())));
+                    GzipUtils.compress(imgOutput.toByteArray()));
             this.saveSmallImage(smallImage);
         }
     }
@@ -133,7 +132,7 @@ public class ProductsImagesRepository {
             }
 
             DatabaseImage smallImage = new DatabaseImage(image.getId(), image.getMediaType(),
-                    new Binary(GzipUtils.compress(imgOutput.toByteArray())));
+                    GzipUtils.compress(imgOutput.toByteArray()));
             this.saveIcon(smallImage);
         }
     }
@@ -141,16 +140,16 @@ public class ProductsImagesRepository {
     public Optional<DatabaseImage> saveAndScale(DatabaseImage image){
 
         try {
-            JpegImageMetadata metadata = (JpegImageMetadata) Imaging.getMetadata(image.getImage().getData());
+            JpegImageMetadata metadata = (JpegImageMetadata) Imaging.getMetadata(image.getImage());
             TiffImageMetadata imgMeta = null;
             if(metadata !=null) imgMeta = metadata.getExif();
             TiffOutputSet exifSet = null;
             if(imgMeta != null) exifSet = imgMeta.getOutputSet();
 
-            BufferedImage buffImg = ImageIO.read(new ByteArrayInputStream(image.getImage().getData()));
+            BufferedImage buffImg = ImageIO.read(new ByteArrayInputStream(image.getImage()));
             this.saveAndScaleSmallImage(image, buffImg, exifSet);
             this.saveAndScaleIcon(image, buffImg, exifSet);
-            image.setImage(new Binary(GzipUtils.compress(image.getImage().getData())));
+            image.setImage(GzipUtils.compress(image.getImage()));
             return Optional.of(this.saveOriginalImage(image));
         } catch (IOException | ImageReadException | ClassCastException | ImageWriteException e) {
 //            e.printStackTrace();

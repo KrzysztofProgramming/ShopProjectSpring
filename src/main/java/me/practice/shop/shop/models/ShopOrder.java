@@ -12,7 +12,7 @@ import java.util.Map;
 @NoArgsConstructor
 @Builder
 @Entity
-@Table(name = ShopOrder.TABLE_NAME, indexes = @Index(name = "index_email", columnList = "email"))
+@Table(name = ShopOrder.TABLE_NAME, indexes = @Index(name = "index_order_email", columnList = "email"))
 public class ShopOrder {
     public static final int PAID = 1;
     public static final int CANCELLED = 2;
@@ -32,7 +32,7 @@ public class ShopOrder {
 
     @ElementCollection
     @CollectionTable(name = "order_products_ids",
-            joinColumns = @JoinColumn(name = "order_id", referencedColumnName = "id"))
+            joinColumns = @JoinColumn(name = "fk_order", referencedColumnName = "order_id"))
     @MapKeyColumn(name = "product_id")
     @Column(name = "product_count")
     private Map<Long, Integer> productsIds;

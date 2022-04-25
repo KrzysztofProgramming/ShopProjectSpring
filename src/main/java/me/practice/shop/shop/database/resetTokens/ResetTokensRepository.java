@@ -10,9 +10,9 @@ import java.util.Optional;
 @Repository
 public interface ResetTokensRepository extends JpaRepository<ResetPasswordToken, String> {
 
-    Optional<ResetPasswordToken> findByUsername(String username);
+    Optional<ResetPasswordToken> findByOwnerUsername(String username);
 
-    void deleteByUsername(String username);
+    void deleteByOwnerUsername(String username);
 
     void deleteByExpireDateLessThan(Date date);
 }

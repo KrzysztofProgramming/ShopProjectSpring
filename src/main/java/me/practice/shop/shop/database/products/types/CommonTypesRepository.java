@@ -21,7 +21,7 @@ public interface CommonTypesRepository extends JpaRepository<CommonType, Long> {
 
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Transactional
-    @Query(value = "DELETE t FROM #{#entityName} t WHERE t.name = ?1")
+    @Query(value = "DELETE FROM #{#entityName} t WHERE t.name = ?1")
     void deleteByName(String name);
 
     @Query(value = "SELECT DISTINCT t.name FROM #{#entityName} t")
