@@ -19,7 +19,7 @@ public class NewOrderRequest {
     @Valid
     private UserInfo info;
     @NotEmpty
-    private Map<String, Integer> products;
+    private Map<Long, Integer> products;
     @Email
     @NotNull
     private String email;

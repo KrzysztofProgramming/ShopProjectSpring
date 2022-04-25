@@ -6,6 +6,6 @@ import lombok.Data;
 @Data
 @AllArgsConstructor
 public class SimpleAuthor {
-    private String id;
+    private Long id;
     private String name;
 }

@@ -12,7 +12,7 @@ import javax.validation.constraints.PositiveOrZero;
 @NoArgsConstructor
 public class CartProductRequest {
     @NotBlank
-    private String productId;
+    private Long productId;
     @PositiveOrZero
     private Integer amount;
 }

@@ -4,6 +4,7 @@ import lombok.Getter;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 public enum Permissions {
@@ -29,7 +30,7 @@ public enum Permissions {
                 .findAny().orElse(NO_PERMISSION);
     }
 
-    public static Collection<String> fromNumber(long value){
+    public static Set<String> fromNumber(long value){
         return Arrays.stream(Permissions.values())
                 .filter(perm -> perm.isInValue(value))
                 .map(Permissions::toString)

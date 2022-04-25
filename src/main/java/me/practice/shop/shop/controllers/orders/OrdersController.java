@@ -6,13 +6,15 @@ import me.practice.shop.shop.database.products.ProductsRepository;
 import me.practice.shop.shop.models.*;
 import me.practice.shop.shop.services.FunctionsService;
 import me.practice.shop.shop.services.OrdersService;
-import me.practice.shop.shop.utils.IterableUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
-import java.util.*;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @RestController
@@ -36,8 +38,7 @@ public class OrdersController {
     public ResponseEntity<?> createNewOrder(@Valid @RequestBody NewOrderRequest request){
         if(this.ordersService.hasUnpaidOrder(request.getEmail()))
             return ResponseEntity.badRequest().body(new ErrorResponse("Dokończ płatność poprzedniego zamówienia"));
-        List<BookProduct> products = IterableUtils.toList(this.productsRepository
-                .findAllById(request.getProducts().keySet()));
+        List<BookProduct> products = this.productsRepository.findAllById(request.getProducts().keySet());
         if(products.size() < request.getProducts().size()){
             return ResponseEntity.badRequest().body("Nie wszystkie produkty są dostępne");
         }
@@ -49,13 +50,12 @@ public class OrdersController {
             return ResponseEntity.badRequest().body(new ErrorResponse("Nie udało się wysłać emaila"));
         }
 //        user.ifPresent(shopUser -> this.cartsService.clearUserCart(shopUser.getUsername()));
-        this.productsRepository.decreaseProductsCounts(request.getProducts());
-        this.ordersRepository.insert(order);
+        this.ordersRepository.save(order);
         return ResponseEntity.ok().body(order);
     }
 
     @PutMapping("payOrder/{id}")
-    public ResponseEntity<?> payOrder(@PathVariable String id){
+    public ResponseEntity<?> payOrder(@PathVariable Long id){
         return this.ordersService.payOrder(id) ? ResponseEntity.ok().build() :
                 ResponseEntity.badRequest().body(new ErrorResponse("Brak zamówienia o podanym id"));
     }
@@ -66,7 +66,7 @@ public class OrdersController {
                 ResponseEntity.badRequest().body(new ErrorResponse("Brak zamówienia o podanym id"));
     }
 
-    private double calcTotalPrice(List<BookProduct> products, Map<String, Integer> amount){
+    private double calcTotalPrice(List<BookProduct> products, Map<Long, Integer> amount){
         double price = 0;
         for(BookProduct product: products){
             price += amount.get(product.getId()) * product.getPrice();
@@ -75,7 +75,7 @@ public class OrdersController {
     }
 
     private ShopOrder fromRequest(NewOrderRequest request, List<BookProduct> products, String username){
-        return new ShopOrder(UUID.randomUUID().toString(), username, request.getEmail(), request.getInfo(),
+        return new ShopOrder(username, request.getEmail(), request.getInfo(),
                 request.getProducts(), new Date(), this.calcTotalPrice(products, request.getProducts()),
                 ShopOrder.UNPAID);
     }

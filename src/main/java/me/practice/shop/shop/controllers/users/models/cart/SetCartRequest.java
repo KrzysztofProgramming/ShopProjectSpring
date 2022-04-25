@@ -12,5 +12,5 @@ import java.util.Map;
 @NoArgsConstructor
 public class SetCartRequest {
     @NotNull
-    private Map<String, Integer> products;
+    private Map<Long, Integer> products;
 }

@@ -4,7 +4,6 @@ import me.practice.shop.shop.database.users.RolesRepository;
 import me.practice.shop.shop.database.users.UsersDatabase;
 import me.practice.shop.shop.models.Role;
 import me.practice.shop.shop.models.ShopUser;
-import me.practice.shop.shop.utils.IterableUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -17,7 +16,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -53,12 +54,9 @@ public class UserDetailsServiceImpl implements UserDetailsService {
                 -> new UsernameNotFoundException("User not exists"));
     }
 
-    public Collection<Role> getRolesByNames(Iterable<String> names) throws IllegalArgumentException{
-
-        List<Role> list = IterableUtils.toList(rolesRepository.findAllById(names));
-        if(list.size() != IterableUtils.size(names))
-            throw new IllegalArgumentException();
-        return list;
+    public Set<Role> getRolesByNames(Iterable<String> names) throws IllegalArgumentException{
+        List<Role> list = rolesRepository.findAllById(names);
+        return new HashSet<>(list);
     }
 
     private Collection<GrantedAuthority> fusedRolesWithAuthorities(ShopUser user){

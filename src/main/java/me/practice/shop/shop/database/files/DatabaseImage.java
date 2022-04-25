@@ -11,7 +11,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Document
 public class DatabaseImage {
     @Id
-    private String id;
+    private Long id;
     private String mediaType;
     private Binary image;
 }

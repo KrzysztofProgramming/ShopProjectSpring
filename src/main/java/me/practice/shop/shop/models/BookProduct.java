@@ -3,7 +3,7 @@ package me.practice.shop.shop.models;
 import lombok.*;
 
 import javax.persistence.*;
-import java.util.Collection;
+import java.util.Set;
 
 
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
@@ -36,7 +36,7 @@ public class BookProduct {
             joinColumns = @JoinColumn(name = "fk_book"),
             inverseJoinColumns = @JoinColumn(name = "fk_author")
     )
-    private Collection<Author> authors;
+    private Set<Author> authors;
 
     @ManyToMany(cascade = {CascadeType.MERGE}, fetch = FetchType.EAGER)
     @JoinTable(
@@ -44,7 +44,7 @@ public class BookProduct {
             joinColumns = @JoinColumn(name = "fk_book"),
             inverseJoinColumns = @JoinColumn(name = "fk_type")
     )
-    private Collection<CommonType> types;
+    private Set<CommonType> types;
 
     private Integer inStock;
 

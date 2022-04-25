@@ -6,6 +6,7 @@ import me.practice.shop.shop.permissions.Permissions;
 import javax.persistence.*;
 import java.util.Collection;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Data
@@ -31,7 +32,7 @@ public class ShopUser {
             joinColumns = @JoinColumn(name = "fk_user"),
             inverseJoinColumns = @JoinColumn(name="fk_role")
     )
-    private Collection<Role> roles;
+    private Set<Role> roles;
     @Embedded
     private UserInfo userInfo;
 

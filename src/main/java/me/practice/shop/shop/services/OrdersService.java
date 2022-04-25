@@ -2,13 +2,10 @@ package me.practice.shop.shop.services;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import me.practice.shop.shop.database.orders.OrdersRepository;
 import me.practice.shop.shop.models.OrderProductDetail;
 import me.practice.shop.shop.models.ShopOrder;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.query.Criteria;
-import org.springframework.data.mongodb.core.query.Query;
-import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.mail.MailException;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
@@ -25,13 +22,13 @@ import java.util.List;
 public class OrdersService {
 
     @Autowired
-    private MongoTemplate mongoTemplate;
-
-    @Autowired
     private TemplateEngine templateEngine;
 
     @Autowired
     private JavaMailSender mailSender;
+
+    @Autowired
+    private OrdersRepository ordersRepository;
 
     public boolean sendEmail(ShopOrder order, List<OrderProductDetail> details){
         Context context = new Context();
@@ -61,21 +58,19 @@ public class OrdersService {
     }
 
 
-    public boolean payOrder(String id){
-       return this.mongoTemplate.updateFirst(Query.query(Criteria.where("id").is(id)
-                       .and("status").is(ShopOrder.UNPAID)), new Update().set("status", ShopOrder.PAID),
-               ShopOrder.class).getModifiedCount() > 0;
+    public boolean payOrder(Long id){
+       return this.ordersRepository.changeStatus(id, ShopOrder.PAID) > 0;
     }
 
     public boolean hasUnpaidOrder(String email){
-        return this.mongoTemplate.exists(Query.query(Criteria.where("email").is(email)
-                .and("status").is(ShopOrder.UNPAID)), ShopOrder.class);
+        return this.ordersRepository.countOrders(email, ShopOrder.UNPAID) > 0;
     }
 
     public boolean cancelOrder(String id){
-        return this.mongoTemplate.updateFirst(Query.query(Criteria.where("id").is(id)
-                .and("status").is(ShopOrder.UNPAID)), new Update().set("status", ShopOrder.CANCELLED),
-                ShopOrder.class).getModifiedCount() > 0;
+//        return this.mongoTemplate.updateFirst(Query.query(Criteria.where("id").is(id)
+//                .and("status").is(ShopOrder.UNPAID)), new Update().set("status", ShopOrder.CANCELLED),
+//                ShopOrder.class).getModifiedCount() > 0; TODO
+        return true;
     }
 
 

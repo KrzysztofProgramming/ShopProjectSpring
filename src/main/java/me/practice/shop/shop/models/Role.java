@@ -5,6 +5,7 @@ import me.practice.shop.shop.permissions.Permissions;
 
 import javax.persistence.*;
 import java.util.Collection;
+import java.util.Set;
 
 @Data
 @AllArgsConstructor
@@ -25,7 +26,7 @@ public class Role {
             name = "role_authorities",
             joinColumns = @JoinColumn(name="role_name", referencedColumnName = "name"))
     @Column(name="authority")
-    private Collection<String> authorities;
+    private Set<String> authorities;
     private Double strength;
 
     public Collection<String> getAuthorities() {

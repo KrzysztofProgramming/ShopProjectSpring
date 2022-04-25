@@ -12,10 +12,6 @@ import org.apache.commons.imaging.formats.tiff.TiffImageMetadata;
 import org.apache.commons.imaging.formats.tiff.write.TiffOutputSet;
 import org.bson.types.Binary;
 import org.imgscalr.Scalr;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.query.Criteria;
-import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Repository;
 
 import javax.imageio.ImageIO;
@@ -24,7 +20,6 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Optional;
-import java.util.Set;
 
 @Repository
 public class ProductsImagesRepository {
@@ -35,73 +30,74 @@ public class ProductsImagesRepository {
     public static final int SMALL_IMAGE_SIZE = 350;
     public static final int ICON_SIZE = 150;
 
-    private final MongoTemplate mongoTemplate;
 
-    @Autowired
-    public ProductsImagesRepository(MongoTemplate template){
-        this.mongoTemplate = template;
+    public ProductsImagesRepository(){
         this.initDatabases();
     }
 
     private void initDatabases(){
-        Set<String> currentCollections =  mongoTemplate.getCollectionNames();
-        if(!currentCollections.contains(SMALL_IMAGES_COL_NAME)){
-            this.mongoTemplate.createCollection(SMALL_IMAGES_COL_NAME);
-        }
-        if(!currentCollections.contains(IMAGES_COL_NAME)){
-            this.mongoTemplate.createCollection(IMAGES_COL_NAME);
-        }
-        if(!currentCollections.contains(ICON_COL_NAME)){
-            this.mongoTemplate.createCollection(ICON_COL_NAME);
-        }
+//        Set<String> currentCollections =  mongoTemplate.getCollectionNames();
+//        if(!currentCollections.contains(SMALL_IMAGES_COL_NAME)){
+//            this.mongoTemplate.createCollection(SMALL_IMAGES_COL_NAME);
+//        }
+//        if(!currentCollections.contains(IMAGES_COL_NAME)){
+//            this.mongoTemplate.createCollection(IMAGES_COL_NAME);
+//        }
+//        if(!currentCollections.contains(ICON_COL_NAME)){
+//            this.mongoTemplate.createCollection(ICON_COL_NAME);
+//        }
     }
 
     private DatabaseImage saveOriginalImage(DatabaseImage image){
-        return this.mongoTemplate.save(image, IMAGES_COL_NAME);
+//        return this.mongoTemplate.save(image, IMAGES_COL_NAME);
+        return image;
     }
 
     private void saveSmallImage(DatabaseImage image){
-        this.mongoTemplate.save(image, SMALL_IMAGES_COL_NAME);
+//        this.mongoTemplate.save(image, SMALL_IMAGES_COL_NAME);
     }
 
     private void saveIcon(DatabaseImage image){
-        this.mongoTemplate.save(image, ICON_COL_NAME);
+//        this.mongoTemplate.save(image, ICON_COL_NAME);
     }
 
     public Optional<DatabaseImage> getIcon(String id){
-        return Optional.ofNullable(this.mongoTemplate.findById(id, DatabaseImage.class, ICON_COL_NAME))
-                .map(image->{
-                    try {
-                        image.setImage(GzipUtils.decompress(image.getImage()));
-                        return image;
-                    } catch (IOException e) {
-                        return null;
-                    }
-                }).or(()->this.getSmallImage(id));
+//        return Optional.ofNullable(this.mongoTemplate.findById(id, DatabaseImage.class, ICON_COL_NAME))
+//                .map(image->{
+//                    try {
+//                        image.setImage(GzipUtils.decompress(image.getImage()));
+//                        return image;
+//                    } catch (IOException e) {
+//                        return null;
+//                    }
+//                }).or(()->this.getSmallImage(id));
+        return Optional.empty();
     }
 
     public Optional<DatabaseImage> getSmallImage(String id){
-        return Optional.ofNullable(this.mongoTemplate.findById(id, DatabaseImage.class, SMALL_IMAGES_COL_NAME))
-                .map( image -> {
-                    try {
-                        image.setImage(GzipUtils.decompress(image.getImage()));
-                        return image;
-                    } catch (IOException e) {
-                        return null;
-                    }
-                }).or(()->this.getOriginalImage(id));
+//        return Optional.ofNullable(this.mongoTemplate.findById(id, DatabaseImage.class, SMALL_IMAGES_COL_NAME))
+//                .map( image -> {
+//                    try {
+//                        image.setImage(GzipUtils.decompress(image.getImage()));
+//                        return image;
+//                    } catch (IOException e) {
+//                        return null;
+//                    }
+//                }).or(()->this.getOriginalImage(id));
+        return Optional.empty();
     }
 
     public Optional<DatabaseImage> getOriginalImage(String id){
-        return Optional.ofNullable(this.mongoTemplate.findById(id, DatabaseImage.class, IMAGES_COL_NAME))
-                .map(image->{
-                    try {
-                        image.setImage(GzipUtils.decompress(image.getImage()));
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                    return image;
-                });
+//        return Optional.ofNullable(this.mongoTemplate.findById(id, DatabaseImage.class, IMAGES_COL_NAME))
+//                .map(image->{
+//                    try {
+//                        image.setImage(GzipUtils.decompress(image.getImage()));
+//                    } catch (IOException e) {
+//                        e.printStackTrace();
+//                    }
+//                    return image;
+//                });
+        return Optional.empty();
     }
 
     @SneakyThrows
@@ -162,10 +158,11 @@ public class ProductsImagesRepository {
         }
     }
 
-    public void deleteProductImages(String id){
-        this.mongoTemplate.remove(new Query(Criteria.where("_id").is(id)), SMALL_IMAGES_COL_NAME);
-        this.mongoTemplate.remove(new Query(Criteria.where("_id").is(id)), IMAGES_COL_NAME);
-        this.mongoTemplate.remove(new Query(Criteria.where("_id").is(id)), ICON_COL_NAME);
+    public void deleteProductImages(Long id){
+//        this.mongoTemplate.remove(new Query(Criteria.where("_id").is(id)), SMALL_IMAGES_COL_NAME);
+//        this.mongoTemplate.remove(new Query(Criteria.where("_id").is(id)), IMAGES_COL_NAME);
+//        this.mongoTemplate.remove(new Query(Criteria.where("_id").is(id)), ICON_COL_NAME);
+        //TODO
     }
 
 }

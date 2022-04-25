@@ -7,7 +7,7 @@ import lombok.NoArgsConstructor;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.PositiveOrZero;
-import java.util.Collection;
+import java.util.Set;
 
 @Data
 @AllArgsConstructor
@@ -23,10 +23,10 @@ public class ProductRequest {
     private Double price;
 
     @NotNull
-    private Collection<String> types;
+    private Set<String> types;
 
     @NotNull
-    private Collection<String> authorsNames;
+    private Set<String> authorsNames;
 
     @PositiveOrZero
     private Integer inStock;

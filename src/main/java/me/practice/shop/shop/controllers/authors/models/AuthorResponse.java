@@ -7,7 +7,7 @@ import me.practice.shop.shop.models.Author;
 @AllArgsConstructor
 @Data
 public class AuthorResponse {
-    private String id;
+    private Long id;
     private String name;
     private String description;
     private Integer writtenBooks;

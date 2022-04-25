@@ -9,13 +9,13 @@ import me.practice.shop.shop.models.ErrorResponse;
 import me.practice.shop.shop.models.GetByParamsResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
 import java.util.Optional;
-import java.util.UUID;
 
 @RestController
 @RequestMapping(value = "api/authors/")
@@ -30,7 +30,9 @@ public class AuthorsController {
 
     @GetMapping(value = "getAll")
     public ResponseEntity<?> getAuthors(@Valid GetAuthorsParams params){
-        Page<AuthorResponse> authors = this.authorsRepository.findByParams(params).map(AuthorResponse::new);
+        Page<AuthorResponse> authors = this.authorsRepository.findAll(PageRequest.of(params.getPageNumber(),
+                params.getPageSize())).map(AuthorResponse::new); //TODO
+        //this.authorsRepository.findByParams(params).map(AuthorResponse::new);
         return ResponseEntity.ok(new GetByParamsResponse<>(authors.getNumber() + 1, authors.getTotalPages(),
                 authors.getTotalElements(), authors.getContent()));
     }
@@ -41,7 +43,7 @@ public class AuthorsController {
     }
 
     @GetMapping(value = "byId/{id}")
-    public ResponseEntity<?> getAuthorById(@PathVariable String id){
+    public ResponseEntity<?> getAuthorById(@PathVariable Long id){
         Optional<Author> author = authorsRepository.findById(id);
         return author.isPresent() ? ResponseEntity.ok(new AuthorResponse(author.get()))
                 : ResponseEntity.badRequest().body(this.authorsManager.getAuthorNotExistsInfo());
@@ -49,7 +51,7 @@ public class AuthorsController {
 
     @PreAuthorize("hasAuthority('products:write')")
     @DeleteMapping(value = "deleteAuthor/{id}")
-    public ResponseEntity<?> deleteProduct(@PathVariable String id){
+    public ResponseEntity<?> deleteProduct(@PathVariable Long id){
         return this.authorsManager.deleteAuthor(id);
     }
 
@@ -57,7 +59,7 @@ public class AuthorsController {
     @PostMapping(value = "newAuthor")
     public ResponseEntity<?> addNewAuthor(@Valid @RequestBody AuthorRequest request){
         try {
-            return ResponseEntity.ok(new AuthorResponse(this.authorsRepository.insert(this.newAuthor(request))));
+            return ResponseEntity.ok(new AuthorResponse(this.authorsRepository.save(this.newAuthor(request))));
         }
         catch (Exception e){
             return ResponseEntity.badRequest().body(new ErrorResponse("Autor o takim imieniu już istnieje"));
@@ -66,23 +68,17 @@ public class AuthorsController {
 
     @PreAuthorize("hasAuthority('products:write')")
     @PutMapping(value = "updateAuthor/{id}")
-    public ResponseEntity<?> updateAuthor(@PathVariable String id, @Valid @RequestBody AuthorRequest request){
+    public ResponseEntity<?> updateAuthor(@PathVariable Long id, @Valid @RequestBody AuthorRequest request){
         return this.authorsManager.updateAuthor(id, request);
     }
 
-    @PreAuthorize("hasAuthority('products:write')")
-    @PutMapping(value = "recalcWrittenBooks")
-    public ResponseEntity<?> recalcWrittenBooks(){
-
-        return ResponseEntity.ok().body(this.authorsManager.recalcWrittenBooks());
-    }
 
     private Author newAuthor(AuthorRequest request){
-        return this.fromRequest(UUID.randomUUID().toString(), request);
+        return Author.builder().name(request.getName()).description(request.getDescription()).build();
     }
 
-    private Author fromRequest(String id, AuthorRequest request){
-        return new Author(id, request.getName(), request.getDescription(), 0);
+    private Author fromRequest(Long id, AuthorRequest request){
+        return new Author(id, request.getName(), request.getDescription());
     }
 
 

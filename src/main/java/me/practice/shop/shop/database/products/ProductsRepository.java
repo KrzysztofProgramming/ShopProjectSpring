@@ -23,4 +23,7 @@ public interface ProductsRepository extends JpaRepository<BookProduct, Long> {
 
     @Query(value = "SELECT COUNT(b) FROM #{#entityName} b LEFT JOIN b.types t WHERE t.name = ?1")
     long countByType(String type);
+
+    @Query(value = "SELECT COUNT(b) FROM #{#entityName} b LEFT JOIN b.authors a WHERE a.id = ?1")
+    long countByAuthor(Long authorId);
 }

@@ -12,7 +12,7 @@ import java.util.Map;
 @NoArgsConstructor
 @Builder
 @Entity
-@Table(name = ShopOrder.TABLE_NAME)
+@Table(name = ShopOrder.TABLE_NAME, indexes = @Index(name = "index_email", columnList = "email"))
 public class ShopOrder {
     public static final int PAID = 1;
     public static final int CANCELLED = 2;
@@ -24,7 +24,7 @@ public class ShopOrder {
     @SequenceGenerator(sequenceName = "order_sequence", name = "order_sequence", allocationSize = 1)
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "order_sequence")
     @Column(name = "order_id")
-    private String id;
+    private Long id;
     private String ownerUsername;
     private String email;
     @Embedded
@@ -39,4 +39,14 @@ public class ShopOrder {
     private Date issuedDate;
     private Double totalPrice;
     private Integer status;
+
+    public ShopOrder(String ownerUsername, String email, UserInfo info, Map<Long, Integer> productsIds, Date issuedDate, Double totalPrice, Integer status) {
+        this.ownerUsername = ownerUsername;
+        this.email = email;
+        this.info = info;
+        this.productsIds = productsIds;
+        this.issuedDate = issuedDate;
+        this.totalPrice = totalPrice;
+        this.status = status;
+    }
 }

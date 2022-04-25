@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.*;
 import javax.validation.Valid;
 import java.util.Collection;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -45,7 +46,7 @@ public class PermsController {
     @PostMapping(value = "newRole")
     public ResponseEntity<?> createRoles(@Valid @RequestBody RoleRequest request){
         return this.ifUserHasPerms(request, user-> this.ifRequestValid(request, role-> ResponseEntity.ok(
-                new RoleResponse(this.rolesRepository.insert(role))
+                new RoleResponse(this.rolesRepository.save(role))
         )));
     }
 
@@ -88,7 +89,7 @@ public class PermsController {
 
     private ResponseEntity<?> ifRequestValid(RoleRequest request, Function<Role, ResponseEntity<?>> fn){
 
-        Collection<String> authorities = Permissions.fromNumber(request.getAuthorities());
+        Set<String> authorities = Permissions.fromNumber(request.getAuthorities());
         if(!validateAuthorities(authorities)){
             return ResponseEntity.badRequest().body(new ErrorResponse("Błedne uprawniania"));
         }

@@ -20,6 +20,7 @@ import me.practice.shop.shop.services.ShoppingCartsService;
 import me.practice.shop.shop.services.UserDetailsServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -70,7 +71,9 @@ public class UsersController {
     @PreAuthorize("hasAuthority('users:read')")
     @GetMapping(value = "getAll")
     public ResponseEntity<?> getAllUsers(@Valid GetUsersParams params){
-        return ResponseEntity.ok(this.usersDatabase.findByGetParams(params)); //todo
+        Page<ShopUser> users = this.usersDatabase.findAll(PageRequest.of(params.getPageSize(), params.getPageNumber()));
+        return ResponseEntity.ok(new GetByParamsResponse<>(users.getNumber(), users.getTotalPages(),
+                users.getTotalElements(), users.toList())); //todo
     }
 
     @PreAuthorize("hasAuthority('users:write')")
@@ -79,7 +82,7 @@ public class UsersController {
         String error = validateUserRequest(request, true);
         if(!error.isEmpty()) return ResponseEntity.badRequest().body(new ErrorResponse(error));
         try {
-            return ResponseEntity.ok(toUserResponse(usersDatabase.insert(fromUserRequest(request))));
+            return ResponseEntity.ok(toUserResponse(usersDatabase.save(fromUserRequest(request))));
         }
         catch (IllegalArgumentException e){return ResponseEntity.badRequest()
                 .body(new ErrorResponse("Przynajmniej jedna z ról nie istnieje"));}
@@ -145,9 +148,9 @@ public class UsersController {
     @PutMapping("profile/updateUserInfo")
     public ResponseEntity<?> updateUserInfo(@Valid @RequestBody UserInfo info){
         return functions.ifUserLoggedIn(user->{
-            if(this.usersDatabase.saveUserInfo(user.getUsername(), info).wasAcknowledged())
-                return ResponseEntity.ok().build();
-            return ResponseEntity.badRequest().body(new ErrorResponse("Operacja nie udana"));
+            user.setUserInfo(info);
+            this.usersDatabase.save(user);
+            return ResponseEntity.ok().build();
         });
     }
 
@@ -164,7 +167,9 @@ public class UsersController {
     public ResponseEntity<?> getUserOrders(@Valid GetOrdersParams params){
         return this.functions.ifUserLoggedIn(user ->{
 //            return ResponseEntity.ok(new GetByParamsResponse<>())
-            Page<ShopOrder> page = this.ordersRepository.getByParams(params, user.getUsername());
+            Page<ShopOrder> page = this.ordersRepository.findByOwnerUsername(user.getUsername(),
+                    PageRequest.of(params.getPageNumber(), params.getPageSize()));
+            //TODO
             return ResponseEntity.ok(new GetByParamsResponse<>(
                     page.getNumber() + 1, page.getTotalPages(), page.getTotalElements(), page.getContent()));
         });
@@ -213,7 +218,7 @@ public class UsersController {
     public ResponseEntity<?> setCart(@Valid @RequestBody SetCartRequest request){
         return functions.ifUserLoggedIn(user->{
             ShoppingCart cart = this.cartsService.cartFromRequest(user.getUsername(), request.getProducts());
-            List<String> productIds = cart.getItems().keySet().stream().toList();
+            List<Long> productIds = cart.getItems().keySet().stream().toList();
             Iterable<BookProduct> products = this.productsRepository.findAllById(productIds);
 
             if(productIds.size() != StreamSupport.stream(products.spliterator(), false).count())
@@ -231,7 +236,7 @@ public class UsersController {
     }
 
     @DeleteMapping("cart/deleteProduct/{id}")
-    public ResponseEntity<?> deleteCartProduct(@PathVariable String id){
+    public ResponseEntity<?> deleteCartProduct(@PathVariable Long id){
         return functions.ifUserLoggedIn(user->{
             Optional<ShoppingCart> cart = this.cartsRepository.findById(user.getUsername());
             if(cart.isEmpty()) return ResponseEntity.ok().build();

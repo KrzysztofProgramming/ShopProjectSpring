@@ -1,6 +1,7 @@
 package me.practice.shop.shop.models;
 
 import lombok.*;
+import org.hibernate.annotations.Formula;
 
 import javax.persistence.*;
 
@@ -24,6 +25,13 @@ public class Author {
 
     private String description;
 
-    @Transient
+//    @Basic(fetch = FetchType.LAZY) TODO check this
+    @Formula(value = "(SELECT COUNT(*) FROM books_authors ba WHERE ba.fk_author = author_id)")
     private Integer writtenBooks;
+
+    public Author(Long id, String name, String description) {
+        this.id = id;
+        this.name = name;
+        this.description = description;
+    }
 }

@@ -45,7 +45,7 @@ public class ShoppingCartsService {
         this.cartsRepository.deleteById(username);
     }
 
-    public ShoppingCart cartFromRequest(String username, Map<String, Integer> products){
+    public ShoppingCart cartFromRequest(String username, Map<Long, Integer> products){
         return new ShoppingCart(username, products, calcExpirationTime());
     }
 

@@ -61,8 +61,8 @@ public class AuthController {
         if(usersDatabase.existsByEmail(request.getEmail()))
             return ResponseEntity.badRequest().body(new ErrorResponse("Email already taken"));
 
-        usersDatabase.insert(new ShopUser(request.getUsername(), request.getEmail(),
-                encoder.encode(request.getPassword()), Collections.emptyList(), null));
+        usersDatabase.save(new ShopUser(request.getUsername(), request.getEmail(),
+                encoder.encode(request.getPassword()), Collections.emptySet(), null));
 
         return loginWithUsername(new LoginRequest(request.getUsername(), request.getPassword()));
     }

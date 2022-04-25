@@ -1,20 +1,17 @@
 package me.practice.shop.shop.controllers.products;
 
 import me.practice.shop.shop.controllers.authors.AuthorsManager;
-import me.practice.shop.shop.controllers.products.events.BeforeProductCreateEvent;
-import me.practice.shop.shop.controllers.products.events.BeforeProductDeleteEvent;
-import me.practice.shop.shop.controllers.products.events.BeforeProductUpdateEvent;
 import me.practice.shop.shop.controllers.products.models.*;
 import me.practice.shop.shop.database.files.DatabaseImage;
 import me.practice.shop.shop.database.products.ProductsRepository;
 import me.practice.shop.shop.database.products.types.CommonTypesRepository;
 import me.practice.shop.shop.models.*;
-import me.practice.shop.shop.utils.IterableUtils;
 import me.practice.shop.shop.utils.MediaTypeUtils;
 import org.bson.types.Binary;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -24,10 +21,9 @@ import org.springframework.web.multipart.MultipartFile;
 import javax.validation.Valid;
 import javax.validation.constraints.NotEmpty;
 import java.io.IOException;
-import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
+import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
@@ -60,7 +56,8 @@ public class ProductsController {
 
     @GetMapping(value = "getAll")
     public ResponseEntity<?> getProducts(@Valid GetProductsParams params) {
-        Page<BookProduct> productPage = this.productsRepository.findByParams(params);
+        Page<BookProduct> productPage =this.productsRepository.findAll(PageRequest.of(params.getPageNumber(),
+                params.getPageSize())); // this.productsRepository.findByParams(params); TODO
         Page<ProductResponse> responsePage = productPage.map(ProductResponse::new);
         return ResponseEntity.ok(new GetByParamsResponse<>(productPage.getNumber() + 1, productPage.getTotalPages(),
                 productPage.getTotalElements(), responsePage.toList()));
@@ -68,14 +65,14 @@ public class ProductsController {
 
 
     @GetMapping(value = "byId/{id}")
-    public ResponseEntity<?> getProductById(@PathVariable String id) {
+    public ResponseEntity<?> getProductById(@PathVariable Long id) {
         Optional<BookProduct> product = productsRepository.findById(id);
         return product.isPresent() ? ResponseEntity.ok(product.map(ProductResponse::new))
                 : ResponseEntity.badRequest().body(productNotExistsInfo);
     }
 
     @GetMapping(value = "byIds")
-    public ResponseEntity<?> getProductsByIds(@RequestParam @Valid @NotEmpty List<String> ids) {
+    public ResponseEntity<?> getProductsByIds(@RequestParam @Valid @NotEmpty List<Long> ids) {
         Iterable<BookProduct> products = productsRepository.findAllById(ids);
         return ResponseEntity.ok(StreamSupport.stream(products.spliterator(), false)
                 .map(ProductResponse::new).collect(Collectors.toList()));
@@ -83,13 +80,14 @@ public class ProductsController {
 
     @GetMapping(value = "getTypes")
     public ResponseEntity<?> getTypes(){
-        return ResponseEntity.ok(new TypesResponse(IterableUtils.toList(this.typesManager.getTypesAsStrings())));
+        return ResponseEntity.ok(new TypesResponse(this.typesManager.getTypesAsStrings()));
     }
 
     @PreAuthorize("hasAuthority('products:write')")
     @GetMapping(value="getTypesDetails")
     public ResponseEntity<?> getTypesDetails(@Valid GetTypesParams params){
-        Page<CommonType> result = this.typesRepository.findByParams(params);
+        Page<CommonType> result = this.typesRepository.findAll(PageRequest.of(params.getPageNumber(),
+                params.getPageSize())); //findByParams(params); TODO
         return ResponseEntity.ok(new GetByParamsResponse<>(result.getNumber() + 1,
                 result.getTotalPages(), result.getTotalElements(), result.getContent()));
     }
@@ -122,35 +120,27 @@ public class ProductsController {
     @PostMapping(value = "newProduct")
     public ResponseEntity<?> addProduct(@Valid @RequestBody ProductRequest request) {
         return this.validateProductRequest(request, (authors, types)->{
-            this.eventPublisher.publishEvent(new BeforeProductCreateEvent(this, request));
             return ResponseEntity.ok().body(new ProductResponse(
-            productsRepository.insert(this.newProduct(request, authors, types))));
+            this.productsRepository.save(this.newProduct(request, authors, types))));
         });
     }
 
     @PreAuthorize("hasAuthority('products:write')")
-    @PutMapping(value="recalcTypesCounters")
-    public ResponseEntity<?> recalcTypesCounters(){
-        return ResponseEntity.ok().body(this.typesManager.recalcTypesCounters());
-    }
-
-    @PreAuthorize("hasAuthority('products:write')")
     @PutMapping(value = "updateProduct/{id}")
-    public ResponseEntity<?> updateProduct(@PathVariable String id, @Valid @RequestBody ProductRequest request) {
+    public ResponseEntity<?> updateProduct(@PathVariable Long id, @Valid @RequestBody ProductRequest request) {
         return this.validateProductRequest(request, (authors, types)-> productsRepository.findById(id)
                 .map(product -> {
-                    this.eventPublisher.publishEvent(new BeforeProductUpdateEvent(this, request, product));
                     return ResponseEntity.ok((Object) new ProductResponse(
                             productsRepository.save(this.fromRequest(product.getId(), request, authors, types))));
                 }).orElse(ResponseEntity.badRequest().body(productNotExistsInfo)));
     }
 
     private ResponseEntity<?> validateProductRequest(ProductRequest request,
-                                                     BiFunction<Collection<Author>, Collection<String>, ResponseEntity<?>> fn){
-        Collection<Author> authors = this.authorsManager.getAuthorsByNames(request.getAuthorsNames());
+                                                     BiFunction<Set<Author>, Set<String>, ResponseEntity<?>> fn){
+        Set<Author> authors = this.authorsManager.getAuthorsByNames(request.getAuthorsNames());
         if (authors.size() != request.getAuthorsNames().size())
             return ResponseEntity.badRequest().body(new ErrorResponse("Zły autor/autorzy"));
-        Collection<String> types = this.typesManager.getTypesByNames(request.getTypes());
+        Set<String> types = this.typesManager.getTypesByNames(request.getTypes());
         if (types.size() != request.getTypes().size())
             return ResponseEntity.badRequest().body(new ErrorResponse("Zły typ/typy"));
         return fn.apply(authors, types);
@@ -158,10 +148,9 @@ public class ProductsController {
 
     @PreAuthorize("hasAuthority('products:write')")
     @DeleteMapping(value = "deleteProduct/{id}")
-    public ResponseEntity<?> deleteProduct(@PathVariable String id) {
+    public ResponseEntity<?> deleteProduct(@PathVariable Long id) {
         BookProduct removingProduct = this.productsRepository.findById(id).orElse(null);
         if(removingProduct==null) return ResponseEntity.ok().build();
-        this.eventPublisher.publishEvent(new BeforeProductDeleteEvent(this, removingProduct));
         productsRepository.deleteById(id);
         this.productsImagesRepository.deleteProductImages(id);
         return ResponseEntity.ok().build();
@@ -169,7 +158,7 @@ public class ProductsController {
 
     @PreAuthorize("hasAuthority('products:write')")
     @PutMapping("uploadProductImage/{id}")
-    public ResponseEntity<?> uploadProductImage(@PathVariable("id") String productId,
+    public ResponseEntity<?> uploadProductImage(@PathVariable("id") Long productId,
                                                 @RequestParam("file") MultipartFile file) throws IOException {
         if (!productsRepository.existsById(productId)) {
             return ResponseEntity.badRequest().body(this.productNotExistsInfo);
@@ -185,7 +174,7 @@ public class ProductsController {
 
     @PreAuthorize("hasAuthority('products:write')")
     @DeleteMapping("deleteProductImage/{id}")
-    public ResponseEntity<?> deleteProductImage(@PathVariable("id") String productId) {
+    public ResponseEntity<?> deleteProductImage(@PathVariable("id") Long productId) {
         this.productsImagesRepository.deleteProductImages(productId);
         return ResponseEntity.ok().build();
     }
@@ -213,14 +202,19 @@ public class ProductsController {
                 .body(image.get().getImage().getData());
     }
 
-    private BookProduct newProduct(ProductRequest request, Collection<Author> authors, Collection<String> types) {
-        return fromRequest(UUID.randomUUID().toString(), request, authors, types);
+    private BookProduct newProduct(ProductRequest request, Set<Author> authors, Set<String> types) {
+        return BookProduct.builder()
+                .name(request.getName())
+                .price(Math.floor(request.getPrice() * 100) / 100)
+                .description(request.getDescription())
+                .authors(authors)
+                .types(types.stream().map(CommonType::new).collect(Collectors.toSet()))
+                .inStock(request.getInStock()).build();
     }
 
-    private BookProduct fromRequest(String id, ProductRequest request, Collection<Author> authors, Collection<String> types) {
-        return new BookProduct(id, request.getName(), Math.floor(request.getPrice() * 100) / 100,
-                request.getDescription(), authors,
-                authors.stream().map(Author::getName).collect(Collectors.toList()),
-                types, request.getInStock());
+    private BookProduct fromRequest(Long id, ProductRequest request, Set<Author> authors, Set<String> types) {
+        BookProduct bp = this.newProduct(request, authors, types);
+        bp.setId(id);
+        return bp;
     }
 }
