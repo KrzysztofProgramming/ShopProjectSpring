@@ -18,13 +18,13 @@ public interface OrdersRepository extends JpaRepository<ShopOrder, Long> {
     Page<ShopOrder> findByOwnerUsername(String username, Pageable pageable);
 
     @Query(value = "SELECT o FROM #{#entityName} o WHERE o.id = ?2 AND o.ownerUsername = ?1")
-    Optional<ShopOrder> findUserOrderById(String username, String id);
+    Optional<ShopOrder> findUserOrderById(String username, Long id);
 
     @Modifying(flushAutomatically = true, clearAutomatically = true)
     @Transactional
     @Query(value = "UPDATE #{#entityName} o SET o.status = ?2 WHERE o.id = ?1")
-    long changeStatus(Long id, Integer newStatus);
+    int changeStatus(Long id, Integer newStatus);
 
     @Query(value = "SELECT COUNT(o) FROM #{#entityName} o WHERE o.email=?1 AND o.status=?2")
-    long countOrders(String email, Integer status);
+    int countOrders(String email, Integer status);
 }

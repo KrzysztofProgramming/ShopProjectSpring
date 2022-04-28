@@ -1,5 +1,6 @@
 package me.practice.shop.shop.controllers.products;
 
+import me.practice.shop.shop.controllers.products.models.TypeResponse;
 import me.practice.shop.shop.database.products.ProductsRepository;
 import me.practice.shop.shop.database.products.types.CommonTypesRepository;
 import me.practice.shop.shop.models.CommonType;
@@ -30,7 +31,7 @@ public class TypesManager {
 
     public ResponseEntity<?> addNewType(String type){
         try {
-           return ResponseEntity.ok(typesRepository.save(new CommonType(type)));
+           return ResponseEntity.ok(new TypeResponse(typesRepository.save(new CommonType(type))));
         }
         catch (Exception e){
             return ResponseEntity.badRequest().body(new ErrorResponse("Taki typ już istnieje"));
@@ -45,15 +46,13 @@ public class TypesManager {
         return this.typesRepository.getTypesIds();
     }
 
-    public Set<String> getTypesByNames(Collection<String> names){
-        return this.typesRepository.getAllByNames(names.stream()
-                .map(CommonType::toTypeName).collect(Collectors.toList())).stream()
-                .map(CommonType::getName).collect(Collectors.toSet());
+    public Set<CommonType> getTypesByNames(Collection<String> names){
+        return this.typesRepository.getAllByNames(names);
     }
 
-    public ResponseEntity<?> updateType(String name, String newName){
+    public ResponseEntity<?> updateType(Long id, String newName){
         try {
-            if (this.typesRepository.updateName(name, newName) <= 0) {
+            if (this.typesRepository.updateName(id, newName) <= 0) {
                 return ResponseEntity.badRequest().body(new ErrorResponse("Taki typ nie istnieje"));
             }
             return ResponseEntity.ok().build();

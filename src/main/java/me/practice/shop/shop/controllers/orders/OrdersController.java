@@ -61,7 +61,7 @@ public class OrdersController {
     }
 
     @PutMapping("cancelOrder/{id}")
-    public ResponseEntity<?> cancelOrder(@PathVariable String id){
+    public ResponseEntity<?> cancelOrder(@PathVariable Long id){
         return this.ordersService.cancelOrder(id) ? ResponseEntity.ok().build() :
                 ResponseEntity.badRequest().body(new ErrorResponse("Brak zamówienia o podanym id"));
     }

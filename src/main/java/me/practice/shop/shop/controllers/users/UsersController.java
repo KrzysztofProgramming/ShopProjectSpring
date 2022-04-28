@@ -21,6 +21,7 @@ import me.practice.shop.shop.services.UserDetailsServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -71,7 +72,8 @@ public class UsersController {
     @PreAuthorize("hasAuthority('users:read')")
     @GetMapping(value = "getAll")
     public ResponseEntity<?> getAllUsers(@Valid GetUsersParams params){
-        Page<ShopUser> users = this.usersRepository.findAll(PageRequest.of(params.getPageSize() - 1, params.getPageNumber()));
+        Page<ShopUser> users = this.usersRepository.findAll(PageRequest.of(params.getPageSize() - 1,
+                params.getPageNumber()).withSort(Sort.by("id")));
         return ResponseEntity.ok(new GetByParamsResponse<>(users.getNumber(), users.getTotalPages(),
                 users.getTotalElements(), users.toList())); //todo
     }
@@ -155,7 +157,7 @@ public class UsersController {
     }
 
     @GetMapping("profile/order/{id}")
-    public ResponseEntity<?> getUserOrder(@PathVariable String id){
+    public ResponseEntity<?> getUserOrder(@PathVariable Long id){
         return this.functions.ifUserLoggedIn(user->{
             Optional<ShopOrder> order = this.ordersRepository.findUserOrderById(user.getUsername(), id);
             if(order.isPresent()) return ResponseEntity.ok(order);

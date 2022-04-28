@@ -1,5 +1,6 @@
 package me.practice.shop.shop.filters;
 
+import io.jsonwebtoken.JwtException;
 import me.practice.shop.shop.utils.JwtUtils;
 import org.apache.logging.log4j.util.Strings;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -46,8 +47,8 @@ public class JwtTokenFilter extends OncePerRequestFilter {
                 SecurityContextHolder.getContext().setAuthentication(authToken);
             }
         }
-        catch (Exception ignored){
-            //token invalid
+        catch (JwtException ignored){
+
         }
     }
 }

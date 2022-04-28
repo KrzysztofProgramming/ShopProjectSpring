@@ -24,10 +24,10 @@ public class ProductRequest {
     private Double price;
 
     @NotNull
-    private Set<String> types;
+    private Set<Long> types;
 
     @NotNull
-    private Set<String> authorsNames;
+    private Set<Long> authors;
 
     @PositiveOrZero
     private Integer inStock;

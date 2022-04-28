@@ -15,6 +15,7 @@ import org.springframework.security.crypto.argon2.Argon2PasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import javax.transaction.Transactional;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
@@ -36,6 +37,7 @@ public class UserDetailsServiceImpl implements UserDetailsService {
     private final PasswordEncoder encoder = new Argon2PasswordEncoder();
 
     @Override
+    @Transactional
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
 //        ShopUser user = username.equals("admin") ? new ShopUser("admin", "admin@gmail.com",
 //                encoder.encode("admin"), List.of(new Role("admin",

@@ -23,10 +23,10 @@ public interface ProductsRepository extends JpaRepository<BookProduct, Long> {
     @Query(value = "SELECT b FROM #{#entityName} b LEFT JOIN b.authors a WHERE a.id IN ?1")
     Collection<BookProduct> getByAuthorsIds(Collection<Long> authorsIds);
 
-    @Query(value = "SELECT COUNT(b) FROM #{#entityName} b LEFT JOIN b.types t WHERE t.name = ?1")
-    long countByType(String type);
+    @Query(value = "SELECT COUNT(t) FROM #{#entityName} b JOIN b.types t GROUP BY t.id HAVING t.id = ?1")
+    long countByType(Long typeId);
 
-    @Query(value = "SELECT COUNT(b) FROM #{#entityName} b LEFT JOIN b.authors a WHERE a.id = ?1")
+    @Query(value = "SELECT COUNT(a) FROM #{#entityName} b JOIN b.authors a GROUP BY a.id HAVING a.id = ?1")
     long countByAuthor(Long authorId);
 
     @Query(value = "SELECT NEW me.practice.shop.shop.models.SimpleAuthor(a.id, a.name) " +

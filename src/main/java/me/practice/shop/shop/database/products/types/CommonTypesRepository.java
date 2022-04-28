@@ -12,12 +12,13 @@ import org.springframework.stereotype.Repository;
 import javax.transaction.Transactional;
 import java.util.Collection;
 import java.util.Optional;
+import java.util.Set;
 
 @Repository
 public interface CommonTypesRepository extends JpaRepository<CommonType, Long> {
 
     @Query(value = "SELECT t FROM #{#entityName} t WHERE t.name IN ?1")
-    Collection<CommonType> getAllByNames(Collection<String> names);
+    Set<CommonType> getAllByNames(Collection<String> names);
 
     @Query(value = "SELECT t FROM #{#entityName} t WHERE t.name = ?1")
     Optional<CommonType> findByName(String name);
@@ -35,11 +36,11 @@ public interface CommonTypesRepository extends JpaRepository<CommonType, Long> {
 
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Transactional
-    @Query("UPDATE #{#entityName} t SET t.name = ?2 WHERE t.name = ?1")
-    long updateName(String oldName, String newName);
+    @Query("UPDATE #{#entityName} t SET t.name = ?2 WHERE t.id = ?1")
+    long updateName(Long id, String newName);
 
     @Query(value = "SELECT NEW me.practice.shop.shop.controllers.products.models.TypeDetailsResponse(" +
-            "t.id, t.name, COUNT(t)) FROM BookProduct b JOIN b.types t GROUP BY t.id")
+            "t.id, t.name, COUNT(t)) FROM BookProduct b JOIN b.types t GROUP BY t.id ORDER BY t.id")
     Page<TypeDetailsResponse> getTypeResponses(Pageable pageable);
 
 }

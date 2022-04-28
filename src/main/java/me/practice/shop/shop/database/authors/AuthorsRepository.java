@@ -32,9 +32,9 @@ public interface AuthorsRepository extends JpaRepository<Author, Long> {
     @Transactional
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query(value = "UPDATE #{#entityName} a SET a.name = ?2, a.description = ?3 WHERE a.id = ?1")
-    long updateNameAndDescription(Long id, String name, String description);
+    int updateNameAndDescription(Long id, String name, String description);
 
-    @Query(nativeQuery = true, value = "SELECT COUNT(*) FROM books_authors ba WHERE ba.fk_author = ?1")
+    @Query(value = "SELECT COUNT(a) FROM BookProduct b JOIN b.authors a GROUP BY a.id")
     long countAuthorBooks(Long authorId);
 
     @Query(value = "SELECT NEW me.practice.shop.shop.models.SimpleAuthor(a.id, a.name) " +
@@ -43,7 +43,7 @@ public interface AuthorsRepository extends JpaRepository<Author, Long> {
 
     @Query(value = "SELECT NEW me.practice.shop.shop.controllers.authors.models.AuthorResponse(" +
             "a.id, a.name, a.description, COUNT(a)) " +
-            "FROM BookProduct b JOIN b.authors a GROUP BY a.id")
+            "FROM BookProduct b JOIN b.authors a GROUP BY a.id ORDER BY a.id")
     Page<AuthorResponse> getAuthorResponses(Pageable pageable);
 
     @Query(value = "SELECT NEW me.practice.shop.shop.controllers.authors.models.AuthorResponse(" +

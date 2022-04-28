@@ -8,5 +8,5 @@ import java.util.Collection;
 @AllArgsConstructor
 @Data
 public class TypesResponse {
-    private Collection<String> types;
+    private Collection<TypeResponse> types;
 }
