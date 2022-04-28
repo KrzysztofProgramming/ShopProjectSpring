@@ -2,7 +2,7 @@ package me.practice.shop.shop.controllers.auth;
 
 import me.practice.shop.shop.controllers.auth.models.*;
 import me.practice.shop.shop.controllers.perms.models.RoleResponse;
-import me.practice.shop.shop.database.users.UsersDatabase;
+import me.practice.shop.shop.database.users.UsersRepository;
 import me.practice.shop.shop.models.ErrorResponse;
 import me.practice.shop.shop.models.RefreshToken;
 import me.practice.shop.shop.models.ResetPasswordToken;
@@ -34,7 +34,7 @@ import java.util.stream.Collectors;
 public class AuthController {
 
     @Autowired
-    private UsersDatabase usersDatabase;
+    private UsersRepository usersRepository;
 
     @Autowired
     private PasswordEncoder encoder;
@@ -56,12 +56,12 @@ public class AuthController {
 
     @PostMapping(value = "register")
     public ResponseEntity<?> register(@Valid @RequestBody RegisterRequest request){
-        if(usersDatabase.existsById(request.getUsername()))
-            return ResponseEntity.badRequest().body(new ErrorResponse("Username already taken"));
-        if(usersDatabase.existsByEmail(request.getEmail()))
-            return ResponseEntity.badRequest().body(new ErrorResponse("Email already taken"));
+        if(usersRepository.existsById(request.getUsername()))
+            return ResponseEntity.badRequest().body(new ErrorResponse("Nazwa użytkownika zajęta"));
+        if(usersRepository.existsByEmail(request.getEmail()))
+            return ResponseEntity.badRequest().body(new ErrorResponse("Taki email już istnieje"));
 
-        usersDatabase.save(new ShopUser(request.getUsername(), request.getEmail(),
+        usersRepository.save(new ShopUser(request.getUsername(), request.getEmail(),
                 encoder.encode(request.getPassword()), Collections.emptySet(), null));
 
         return loginWithUsername(new LoginRequest(request.getUsername(), request.getPassword()));
@@ -69,7 +69,7 @@ public class AuthController {
 
     @PostMapping(value = "login")
     public ResponseEntity<?> login(@Valid @RequestBody LoginRequest request){
-        String username = usersDatabase.findByEmail(request.getUsernameOrEmail())
+        String username = usersRepository.findByEmail(request.getUsernameOrEmail())
                 .map(ShopUser::getUsername).orElse(request.getUsernameOrEmail());
 
         request.setUsernameOrEmail(username);
@@ -80,11 +80,11 @@ public class AuthController {
     public ResponseEntity<?> refreshToken(@Valid @RequestBody RefreshRequest request){
         Optional<RefreshToken> token = refreshTokensService.getAndRenew(request.getRefreshToken());
         if(token.isEmpty())
-            return ResponseEntity.badRequest().body(new ErrorResponse("Wrong refresh token"));
+            return ResponseEntity.badRequest().body(new ErrorResponse("Zły token"));
 
         ShopUser user = userDetailsService.getUserByUsername(token.get().getUsername());
         return ResponseEntity.ok().body(new LoginResponse(jwtUtils.generateToken(user),
-                token.get().getValue(), user.getRoles().stream().map(RoleResponse::new).collect(Collectors.toList())));
+                token.get().getValue().toString(), user.getRoles().stream().map(RoleResponse::new).collect(Collectors.toList())));
     }
 
     @PostMapping(value = "logout")
@@ -97,7 +97,7 @@ public class AuthController {
 
     @PostMapping(value="forgotPassword")
     public ResponseEntity<?> onForgotPassword(@Valid @RequestBody ForgotPasswordRequest request){
-        Optional<ShopUser> user = this.usersDatabase.findByEmail(request.getEmail());
+        Optional<ShopUser> user = this.usersRepository.findByEmail(request.getEmail());
         if(user.isEmpty())
             return ResponseEntity.badRequest().body(new ErrorResponse("Brak użytkownika o podanym emailu"));
         try {
@@ -121,15 +121,16 @@ public class AuthController {
         Optional<ResetPasswordToken> token = this.resetTokensService.getTokenByValue(request.getToken());
           if(token.isEmpty()) return ResponseEntity.badRequest().body(new ErrorResponse("Błędny token"));
         this.resetTokensService.deleteToken(request.getToken());
-        return this.usersDatabase.findById(token.get().getOwnerUsername())
+        return this.usersRepository.findById(token.get().getOwnerUsername())
                 .map(user->{
                     user.setPassword(this.encoder.encode(request.getNewPassword()));
-                    this.usersDatabase.save(user);
+                    this.usersRepository.save(user);
                     return ResponseEntity.ok().build();
                 }).orElse(ResponseEntity.badRequest().build());
     }
 
     private ResponseEntity<?> loginWithUsername(LoginRequest request){
+//        System.out.println(this.usersRepository.findById(request.getUsernameOrEmail()));
         try {
             authManager.authenticate(new UsernamePasswordAuthenticationToken(
                     request.getUsernameOrEmail(), request.getPassword()));
@@ -142,7 +143,7 @@ public class AuthController {
         RefreshToken refreshToken = refreshTokensService.createNewTokenOrRenew(user.getUsername());
         String jwtToken = jwtUtils.generateToken(user);
 
-        return ResponseEntity.ok().body(new LoginResponse(jwtToken, refreshToken.getValue(),
+        return ResponseEntity.ok().body(new LoginResponse(jwtToken, refreshToken.getValue().toString(),
                 user.getRoles().stream().map(RoleResponse::new).collect(Collectors.toList())));
     }
 }

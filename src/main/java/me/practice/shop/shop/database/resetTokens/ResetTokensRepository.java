@@ -6,9 +6,10 @@ import org.springframework.stereotype.Repository;
 
 import java.util.Date;
 import java.util.Optional;
+import java.util.UUID;
 
 @Repository
-public interface ResetTokensRepository extends JpaRepository<ResetPasswordToken, String> {
+public interface ResetTokensRepository extends JpaRepository<ResetPasswordToken, UUID> {
 
     Optional<ResetPasswordToken> findByOwnerUsername(String username);
 

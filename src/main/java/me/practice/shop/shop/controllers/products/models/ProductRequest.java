@@ -20,6 +20,7 @@ public class ProductRequest {
     private String description;
 
     @PositiveOrZero
+    @NotNull
     private Double price;
 
     @NotNull

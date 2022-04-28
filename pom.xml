@@ -111,7 +111,7 @@
 			<artifactId>commons-imaging</artifactId>
 			<version>1.0-alpha2</version>
 		</dependency>
-
+		<!-- https://mvnrepository.com/artifact/org.hibernate.orm.tooling/hibernate-enhance-maven-plugin -->
 	</dependencies>
 
 

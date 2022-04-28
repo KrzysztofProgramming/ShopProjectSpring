@@ -12,7 +12,7 @@ import me.practice.shop.shop.controllers.users.models.users.UserResponse;
 import me.practice.shop.shop.database.orders.OrdersRepository;
 import me.practice.shop.shop.database.products.ProductsRepository;
 import me.practice.shop.shop.database.shoppingCarts.ShoppingCartsRepository;
-import me.practice.shop.shop.database.users.UsersDatabase;
+import me.practice.shop.shop.database.users.UsersRepository;
 import me.practice.shop.shop.models.*;
 import me.practice.shop.shop.permissions.Permissions;
 import me.practice.shop.shop.services.FunctionsService;
@@ -37,7 +37,7 @@ import java.util.stream.StreamSupport;
 public class UsersController {
 
     @Autowired
-    private UsersDatabase usersDatabase;
+    private UsersRepository usersRepository;
 
     @Autowired
     private PasswordEncoder encoder;
@@ -63,7 +63,7 @@ public class UsersController {
     @PreAuthorize("hasAuthority('users:read')")
     @GetMapping(value = "byUsername/{id}")
     public ResponseEntity<?> getUserById(@PathVariable String id){
-        Optional<ShopUser> user = usersDatabase.findById(id);
+        Optional<ShopUser> user = usersRepository.findById(id);
         return user.isPresent() ? ResponseEntity.ok(user)
                 : ResponseEntity.badRequest().body("No user with id: " + id);
     }
@@ -71,7 +71,7 @@ public class UsersController {
     @PreAuthorize("hasAuthority('users:read')")
     @GetMapping(value = "getAll")
     public ResponseEntity<?> getAllUsers(@Valid GetUsersParams params){
-        Page<ShopUser> users = this.usersDatabase.findAll(PageRequest.of(params.getPageSize(), params.getPageNumber()));
+        Page<ShopUser> users = this.usersRepository.findAll(PageRequest.of(params.getPageSize() - 1, params.getPageNumber()));
         return ResponseEntity.ok(new GetByParamsResponse<>(users.getNumber(), users.getTotalPages(),
                 users.getTotalElements(), users.toList())); //todo
     }
@@ -82,7 +82,7 @@ public class UsersController {
         String error = validateUserRequest(request, true);
         if(!error.isEmpty()) return ResponseEntity.badRequest().body(new ErrorResponse(error));
         try {
-            return ResponseEntity.ok(toUserResponse(usersDatabase.save(fromUserRequest(request))));
+            return ResponseEntity.ok(toUserResponse(usersRepository.save(fromUserRequest(request))));
         }
         catch (IllegalArgumentException e){return ResponseEntity.badRequest()
                 .body(new ErrorResponse("Przynajmniej jedna z ról nie istnieje"));}
@@ -91,7 +91,7 @@ public class UsersController {
     @PreAuthorize("hasAuthority('users:write')")
     @PutMapping(value = "updateUser")
     public ResponseEntity<?> updateUser(@Valid @RequestBody UserRequest request){
-        Optional<ShopUser> user = usersDatabase.findById(request.getUsername());
+        Optional<ShopUser> user = usersRepository.findById(request.getUsername());
 
         if(user.isEmpty()){
             return ResponseEntity.badRequest().body(new ErrorResponse("Brak użytkownika:" + request.getUsername()));
@@ -100,7 +100,7 @@ public class UsersController {
         String error = validateUserRequest(request, false);
         if(!error.isEmpty()) return ResponseEntity.badRequest().body(new ErrorResponse(error));
 
-        try{ return ResponseEntity.ok(toUserResponse(usersDatabase.save(fromUserRequest(request)))); }
+        try{ return ResponseEntity.ok(toUserResponse(usersRepository.save(fromUserRequest(request)))); }
         catch (IllegalArgumentException e)
         {return ResponseEntity.badRequest().body(new ErrorResponse("błędne role"));}
     }
@@ -108,9 +108,9 @@ public class UsersController {
     @PreAuthorize("hasAuthority('users:write')")
     @DeleteMapping(value = "deleteUser/{id}")
     public ResponseEntity<?> deleteUser(@PathVariable String id){
-        if(!usersDatabase.existsById(id))
+        if(!usersRepository.existsById(id))
             return ResponseEntity.badRequest().body(new ErrorResponse("No user with id: " + id));
-        usersDatabase.deleteById(id);
+        usersRepository.deleteById(id);
         return ResponseEntity.ok().build();
     }
 
@@ -125,11 +125,11 @@ public class UsersController {
         return functions.ifUserLoggedIn(user->{
             if(!encoder.matches(emailRequest.getPassword(), user.getPassword()))
                 return ResponseEntity.badRequest().body(new ErrorResponse("Błędne hasło"));
-            if(this.usersDatabase.existsByEmail(emailRequest.getNewEmail())) {
+            if(this.usersRepository.existsByEmail(emailRequest.getNewEmail())) {
                 return ResponseEntity.badRequest().body(new ErrorResponse("Ten email jest już zajęty"));
             }
             user.setEmail(emailRequest.getNewEmail());
-            user = this.usersDatabase.save(user);
+            user = this.usersRepository.save(user);
             return ResponseEntity.ok(new ProfileResponse(user.getUsername(), user.getEmail(), user.getUserInfo()));
         });
     }
@@ -140,7 +140,7 @@ public class UsersController {
             if(!encoder.matches(passwordRequest.getOldPassword(), user.getPassword()))
                 return ResponseEntity.badRequest().build();
             user.setPassword(encoder.encode(passwordRequest.getNewPassword()));
-            this.usersDatabase.save(user);
+            this.usersRepository.save(user);
             return ResponseEntity.ok().build();
         });
     }
@@ -149,7 +149,7 @@ public class UsersController {
     public ResponseEntity<?> updateUserInfo(@Valid @RequestBody UserInfo info){
         return functions.ifUserLoggedIn(user->{
             user.setUserInfo(info);
-            this.usersDatabase.save(user);
+            this.usersRepository.save(user);
             return ResponseEntity.ok().build();
         });
     }
@@ -168,7 +168,7 @@ public class UsersController {
         return this.functions.ifUserLoggedIn(user ->{
 //            return ResponseEntity.ok(new GetByParamsResponse<>())
             Page<ShopOrder> page = this.ordersRepository.findByOwnerUsername(user.getUsername(),
-                    PageRequest.of(params.getPageNumber(), params.getPageSize()));
+                    PageRequest.of(params.getPageNumber() - 1, params.getPageSize()));
             //TODO
             return ResponseEntity.ok(new GetByParamsResponse<>(
                     page.getNumber() + 1, page.getTotalPages(), page.getTotalElements(), page.getContent()));
@@ -276,11 +276,11 @@ public class UsersController {
     }
 
     private boolean usernameExists(String username){
-        return usersDatabase.existsById(username);
+        return usersRepository.existsById(username);
     }
 
     private boolean emailExist(String email){
-        return usersDatabase.existsByEmail(email);
+        return usersRepository.existsByEmail(email);
     }
 
     private ShopUser fromUserRequest(UserRequest r) throws IllegalArgumentException{

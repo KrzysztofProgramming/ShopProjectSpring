@@ -1,7 +1,6 @@
 package me.practice.shop.shop.models;
 
 import lombok.*;
-import org.hibernate.annotations.Formula;
 
 import javax.persistence.*;
 
@@ -16,7 +15,7 @@ import javax.persistence.*;
         uniqueConstraints = @UniqueConstraint(name = "uk_type_name", columnNames = "name"),
         indexes = @Index(name = "index_name", columnList = "name"))
 public class CommonType {
-    public static final String TABLE_NAME = "type_table";
+    public static final String TABLE_NAME = "types_table";
 
     @Id
     @SequenceGenerator(name="type_sequence", sequenceName = "type_sequence", allocationSize = 1)
@@ -25,18 +24,12 @@ public class CommonType {
     @EqualsAndHashCode.Include
     private Long id;
 
+    @Column(nullable = false)
     private String name;
-
-    @Basic(fetch = FetchType.LAZY)
-    @Formula(value = "(SELECT COUNT(*)) FROM books_types bt WHERE bt.fk_type = type_id")
-    @Builder.Default
-    private Integer productsCount = null;
 
     public CommonType(String name) {
         this.setName(name);
     }
-
-
 
     public void setName(String name) {
         this.name = toTypeName(name);

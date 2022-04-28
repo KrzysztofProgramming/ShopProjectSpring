@@ -14,7 +14,7 @@ import java.util.Map;
 @AllArgsConstructor
 @Table(name = ShoppingCart.TABLE_NAME, indexes = @Index(name = "index_expire_date", columnList = "expireDate"))
 public class ShoppingCart {
-    public static final String TABLE_NAME = "shopping_cars_table";
+    public static final String TABLE_NAME = "shopping_carts_table";
 
     @Id
     @EqualsAndHashCode.Include

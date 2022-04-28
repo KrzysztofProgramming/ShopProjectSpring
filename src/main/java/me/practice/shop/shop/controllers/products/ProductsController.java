@@ -55,7 +55,8 @@ public class ProductsController {
 
     @GetMapping(value = "getAll")
     public ResponseEntity<?> getProducts(@Valid GetProductsParams params) {
-        Page<BookProduct> productPage =this.productsRepository.findAll(PageRequest.of(params.getPageNumber(),
+//        return ResponseEntity.ok(this.productsRepository.findAll());
+        Page<BookProduct> productPage = this.productsRepository.findAll(PageRequest.of(params.getPageNumber() - 1,
                 params.getPageSize())); // this.productsRepository.findByParams(params); TODO
         Page<ProductResponse> responsePage = productPage.map(ProductResponse::new);
         return ResponseEntity.ok(new GetByParamsResponse<>(productPage.getNumber() + 1, productPage.getTotalPages(),
@@ -127,8 +128,7 @@ public class ProductsController {
     public ResponseEntity<?> updateProduct(@PathVariable Long id, @Valid @RequestBody ProductRequest request) {
         return this.validateProductRequest(request, (authors, types)-> productsRepository.findById(id)
                 .map(product -> ResponseEntity.ok((Object) new ProductResponse(
-                        productsRepository.save(this.fromRequest(product.getId(), request, authors, types)))))
-                .orElse(ResponseEntity.badRequest().body(productNotExistsInfo)));
+                        productsRepository.save(this.fromRequest(product.getId(), request, authors, types))))).orElse(ResponseEntity.badRequest().body(productNotExistsInfo)));
     }
 
     private ResponseEntity<?> validateProductRequest(ProductRequest request,

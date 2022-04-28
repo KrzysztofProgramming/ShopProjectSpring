@@ -25,8 +25,10 @@ public class Role {
     @CollectionTable(
             name = "role_authorities",
             joinColumns = @JoinColumn(name="role_name", referencedColumnName = "name"))
-    @Column(name="authority")
+    @Column(name="authority", nullable = false)
     private Set<String> authorities;
+
+    @Column(nullable = false)
     private Double strength;
 
     public Collection<String> getAuthorities() {

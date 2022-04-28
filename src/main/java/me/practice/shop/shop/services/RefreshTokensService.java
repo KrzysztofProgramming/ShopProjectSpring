@@ -21,7 +21,7 @@ public class RefreshTokensService {
 
     public RefreshToken newRefreshToken(String username){
         refreshTokensDatabase.deleteByUsername(username);
-        return refreshTokensDatabase.save(new RefreshToken(UUID.randomUUID().toString(),
+        return refreshTokensDatabase.save(new RefreshToken(UUID.randomUUID(),
                 username, new Date(), calcExpireDate()));
     }
 
@@ -34,7 +34,7 @@ public class RefreshTokensService {
     }
 
     private RefreshToken createNewToken(String username){
-        return new RefreshToken(UUID.randomUUID().toString(),
+        return new RefreshToken(UUID.randomUUID(),
                 username, new Date(), calcExpireDate());
     }
 
@@ -44,7 +44,7 @@ public class RefreshTokensService {
     }
 
     public Optional<RefreshToken> getAndRenew(String tokenValue){
-        return refreshTokensDatabase.findById(tokenValue)
+        return refreshTokensDatabase.findById(UUID.fromString(tokenValue))
                 .map(token ->{
                     if(token.getExpireDate().before(new Date())){
                         refreshTokensDatabase.deleteById(token.getValue());
@@ -70,6 +70,6 @@ public class RefreshTokensService {
 
 
     public Optional<RefreshToken> getRefreshTokenByValue(String value){
-        return refreshTokensDatabase.findById(value);
+        return refreshTokensDatabase.findById(UUID.fromString(value));
     }
 }

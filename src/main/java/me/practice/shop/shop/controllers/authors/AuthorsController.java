@@ -30,9 +30,8 @@ public class AuthorsController {
 
     @GetMapping(value = "getAll")
     public ResponseEntity<?> getAuthors(@Valid GetAuthorsParams params){
-        Page<AuthorResponse> authors = this.authorsRepository.findAll(PageRequest.of(params.getPageNumber(),
-                params.getPageSize())).map(AuthorResponse::new); //TODO
-        //this.authorsRepository.findByParams(params).map(AuthorResponse::new);
+        Page<AuthorResponse> authors = this.authorsRepository.getAuthorResponses(PageRequest.of(params.getPageNumber() - 1,
+                params.getPageSize())); //TODO
         return ResponseEntity.ok(new GetByParamsResponse<>(authors.getNumber() + 1, authors.getTotalPages(),
                 authors.getTotalElements(), authors.getContent()));
     }
@@ -44,8 +43,8 @@ public class AuthorsController {
 
     @GetMapping(value = "byId/{id}")
     public ResponseEntity<?> getAuthorById(@PathVariable Long id){
-        Optional<Author> author = authorsRepository.findById(id);
-        return author.isPresent() ? ResponseEntity.ok(new AuthorResponse(author.get()))
+        Optional<AuthorResponse> author = this.authorsRepository.getAuthorResponseById(id);
+        return author.isPresent() ? ResponseEntity.ok(author.get())
                 : ResponseEntity.badRequest().body(this.authorsManager.getAuthorNotExistsInfo());
     }
 
@@ -59,7 +58,8 @@ public class AuthorsController {
     @PostMapping(value = "newAuthor")
     public ResponseEntity<?> addNewAuthor(@Valid @RequestBody AuthorRequest request){
         try {
-            return ResponseEntity.ok(new AuthorResponse(this.authorsRepository.save(this.newAuthor(request))));
+            return ResponseEntity.ok(new AuthorResponse(this.authorsRepository.save(this.newAuthor(request)),
+                    0L));
         }
         catch (Exception e){
             return ResponseEntity.badRequest().body(new ErrorResponse("Autor o takim imieniu już istnieje"));

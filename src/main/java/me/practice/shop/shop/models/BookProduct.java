@@ -24,13 +24,16 @@ public class BookProduct {
     @Column(name = "book_id")
     private Long id;
 
+    @Column(nullable = false)
     private String name;
 
+    @Column(nullable = false)
     private Double price;
 
+    @Column(length = 1000)
     private String description;
 
-    @ManyToMany(cascade = {CascadeType.MERGE}, fetch = FetchType.EAGER)
+    @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
             name = "books_authors",
             joinColumns = @JoinColumn(name = "fk_book"),
@@ -38,7 +41,7 @@ public class BookProduct {
     )
     private Set<Author> authors;
 
-    @ManyToMany(cascade = {CascadeType.MERGE}, fetch = FetchType.EAGER)
+    @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
             name = "books_types",
             joinColumns = @JoinColumn(name = "fk_book"),

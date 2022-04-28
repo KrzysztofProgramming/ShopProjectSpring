@@ -1,7 +1,7 @@
 package me.practice.shop.shop.services;
 
 import me.practice.shop.shop.database.users.RolesRepository;
-import me.practice.shop.shop.database.users.UsersDatabase;
+import me.practice.shop.shop.database.users.UsersRepository;
 import me.practice.shop.shop.models.Role;
 import me.practice.shop.shop.models.ShopUser;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,7 +28,7 @@ import java.util.stream.Stream;
 public class UserDetailsServiceImpl implements UserDetailsService {
 
     @Autowired
-    private UsersDatabase usersDatabase;
+    private UsersRepository usersRepository;
 
     @Autowired
     private RolesRepository rolesRepository;
@@ -50,7 +50,7 @@ public class UserDetailsServiceImpl implements UserDetailsService {
     }
 
     public ShopUser getUserByUsername(String username) throws UsernameNotFoundException{
-        return usersDatabase.findById(username).orElseThrow(()
+        return usersRepository.findById(username).orElseThrow(()
                 -> new UsernameNotFoundException("User not exists"));
     }
 

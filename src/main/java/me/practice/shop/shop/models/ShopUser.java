@@ -25,14 +25,18 @@ public class ShopUser {
     @Id
     @EqualsAndHashCode.Include
     private String username;
+    @Column(nullable = false)
     private String email;
+    @Column(nullable = false)
     private String password;
-    @ManyToMany(fetch = FetchType.EAGER, cascade = CascadeType.MERGE)
+
+    @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(name = "users_roles",
             joinColumns = @JoinColumn(name = "fk_user"),
             inverseJoinColumns = @JoinColumn(name="fk_role")
     )
     private Set<Role> roles;
+
     @Embedded
     private UserInfo userInfo;
 

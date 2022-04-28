@@ -23,7 +23,7 @@ public class UserInfo {
     private String lastname;
     @Min(100000000)
     @Max(999999999)
-    private long phoneNumber;
+    private Long phoneNumber;
     @NotNull
     @Valid
     @Embedded

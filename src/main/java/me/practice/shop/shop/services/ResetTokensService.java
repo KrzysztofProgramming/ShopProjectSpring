@@ -35,12 +35,12 @@ public class ResetTokensService {
 
     public ResetPasswordToken generateNewToken(String username){
         this.tokensRepository.deleteByOwnerUsername(username);
-        return this.tokensRepository.save(new ResetPasswordToken(UUID.randomUUID().toString(), username,
+        return this.tokensRepository.save(new ResetPasswordToken(UUID.randomUUID(), username,
                 new Date(), this.calcExpirationTime()));
     }
 
     public boolean tokenExist(String token){
-        return this.tokensRepository.findById(token).isPresent();
+        return this.tokensRepository.findById(UUID.fromString(token)).isPresent();
     }
 
     public void deleteTokenByUsername(String username){
@@ -48,11 +48,11 @@ public class ResetTokensService {
     }
 
     public Optional<ResetPasswordToken> getTokenByValue(String token){
-        return this.tokensRepository.findById(token);
+        return this.tokensRepository.findById(UUID.fromString(token));
     }
 
     public void deleteToken(String token){
-        this.tokensRepository.deleteById(token);
+        this.tokensRepository.deleteById(UUID.fromString(token));
     }
 
     private Date calcExpirationTime(){

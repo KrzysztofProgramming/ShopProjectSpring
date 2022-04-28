@@ -3,7 +3,7 @@ package me.practice.shop.shop.controllers.perms;
 import me.practice.shop.shop.controllers.perms.models.RoleRequest;
 import me.practice.shop.shop.controllers.perms.models.RoleResponse;
 import me.practice.shop.shop.database.users.RolesRepository;
-import me.practice.shop.shop.database.users.UsersDatabase;
+import me.practice.shop.shop.database.users.UsersRepository;
 import me.practice.shop.shop.models.ErrorResponse;
 import me.practice.shop.shop.models.Role;
 import me.practice.shop.shop.models.ShopUser;
@@ -33,7 +33,7 @@ public class PermsController {
     private RolesRepository rolesRepository;
 
     @Autowired
-    private UsersDatabase usersDatabase;
+    private UsersRepository usersRepository;
 
     @PreAuthorize("hasAuthority('products:write')")
     @GetMapping(value = "roles")
@@ -75,7 +75,7 @@ public class PermsController {
         if(auth==null){
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ErrorResponse("Użytkownik niezalogowany"));
         }
-        Optional<ShopUser> user = this.usersDatabase.findById((String) auth.getPrincipal());
+        Optional<ShopUser> user = this.usersRepository.findById((String) auth.getPrincipal());
         if(user.isEmpty()) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ErrorResponse("Użytkownik nie istnieje"));
         }

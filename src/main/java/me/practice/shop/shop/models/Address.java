@@ -17,11 +17,11 @@ public class Address {
     @NotBlank
     private String street;
     @Min(1)
-    private int houseNumber;
-    private int localNumber = -1;
+    private Integer houseNumber;
+    private Integer localNumber = -1;
     @NotBlank
     private String city;
     @Min(10000)
     @Max(99999)
-    private int zipCode;
+    private Integer zipCode;
 }

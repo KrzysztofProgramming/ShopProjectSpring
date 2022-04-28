@@ -6,9 +6,10 @@ import org.springframework.stereotype.Repository;
 
 import java.util.Date;
 import java.util.Optional;
+import java.util.UUID;
 
 @Repository
-public interface RefreshTokensDatabase extends JpaRepository<RefreshToken, String> {
+public interface RefreshTokensDatabase extends JpaRepository<RefreshToken, UUID> {
 
     Optional<RefreshToken> findByUsername(String username);
     void deleteByUsername(String username);

@@ -1,12 +1,14 @@
 package me.practice.shop.shop.database.products;
 
 import me.practice.shop.shop.models.BookProduct;
+import me.practice.shop.shop.models.SimpleAuthor;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.Collection;
 import java.util.Optional;
+import java.util.Set;
 
 @Repository
 public interface ProductsRepository extends JpaRepository<BookProduct, Long> {
@@ -26,4 +28,8 @@ public interface ProductsRepository extends JpaRepository<BookProduct, Long> {
 
     @Query(value = "SELECT COUNT(b) FROM #{#entityName} b LEFT JOIN b.authors a WHERE a.id = ?1")
     long countByAuthor(Long authorId);
+
+    @Query(value = "SELECT NEW me.practice.shop.shop.models.SimpleAuthor(a.id, a.name) " +
+            "FROM #{#entityName} b LEFT JOIN b.authors a WHERE b.id = ?1" )
+    Set<SimpleAuthor> getBookSimpleAuthors(Long id);
 }

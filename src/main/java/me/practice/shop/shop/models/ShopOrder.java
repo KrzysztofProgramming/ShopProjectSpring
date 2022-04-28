@@ -24,13 +24,16 @@ public class ShopOrder {
     @SequenceGenerator(sequenceName = "order_sequence", name = "order_sequence", allocationSize = 1)
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "order_sequence")
     @Column(name = "order_id")
+    @EqualsAndHashCode.Include
     private Long id;
     private String ownerUsername;
+
+    @Column(nullable = false)
     private String email;
     @Embedded
     private UserInfo info;
 
-    @ElementCollection
+    @ElementCollection()
     @CollectionTable(name = "order_products_ids",
             joinColumns = @JoinColumn(name = "fk_order", referencedColumnName = "order_id"))
     @MapKeyColumn(name = "product_id")

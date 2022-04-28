@@ -1,6 +1,9 @@
 package me.practice.shop.shop.database.products.types;
 
+import me.practice.shop.shop.controllers.products.models.TypeDetailsResponse;
 import me.practice.shop.shop.models.CommonType;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -34,6 +37,10 @@ public interface CommonTypesRepository extends JpaRepository<CommonType, Long> {
     @Transactional
     @Query("UPDATE #{#entityName} t SET t.name = ?2 WHERE t.name = ?1")
     long updateName(String oldName, String newName);
+
+    @Query(value = "SELECT NEW me.practice.shop.shop.controllers.products.models.TypeDetailsResponse(" +
+            "t.id, t.name, COUNT(t)) FROM BookProduct b JOIN b.types t GROUP BY t.id")
+    Page<TypeDetailsResponse> getTypeResponses(Pageable pageable);
 
 }
 
