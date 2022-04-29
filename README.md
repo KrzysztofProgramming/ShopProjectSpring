@@ -29,4 +29,4 @@ password: *admin*
 - storing and scaling products' images up to 3 resolutions
 
 ## In progress:
-- Migration to PostgreSQL on sql_dev branch
+- Migration to PostgreSQL on [sql_dev](https://github.com/KrzysztofProgramming/ShopProjectSpring/tree/sql_dev) branch
