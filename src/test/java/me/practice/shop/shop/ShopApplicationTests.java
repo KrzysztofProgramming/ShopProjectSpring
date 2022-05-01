@@ -6,12 +6,19 @@ import me.practice.shop.shop.database.products.types.CommonTypesRepository;
 import me.practice.shop.shop.database.users.RolesRepository;
 import me.practice.shop.shop.database.users.UsersRepository;
 import me.practice.shop.shop.models.*;
+import org.hibernate.search.engine.search.query.SearchResult;
+import org.hibernate.search.mapper.orm.Search;
+import org.hibernate.search.mapper.orm.massindexing.MassIndexer;
+import org.hibernate.search.mapper.orm.scope.SearchScope;
+import org.hibernate.search.mapper.orm.session.SearchSession;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import javax.persistence.EntityManager;
+import javax.transaction.Transactional;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -35,6 +42,9 @@ class ShopApplicationTests {
 
 	@Autowired
 	private UsersRepository usersRepository;
+
+	@Autowired
+	private EntityManager em;
 
 	private final List<String> exampleNames = Arrays.asList("Adams", "Baker", "Clark", "Davis", "Evans", "Frank", "Ghosh",
 			"Hills", "Irwin", "Jones", "Klein", "Lopez", "Mason", "Nalty", "Ochoa", "Patel", "Quinn", "Reily",
@@ -136,4 +146,24 @@ class ShopApplicationTests {
 		System.out.println(this.typesRepository.getTypeResponses(PageRequest.of(0, 50)).toList());
 	}
 
+	@Test
+	@Transactional
+	public void initialIndexing() throws InterruptedException {
+		SearchSession searchSession = Search.session(this.em);
+
+		MassIndexer indexer = searchSession.massIndexer(BookProduct.class )
+				.threadsToLoadObjects(7);
+
+		indexer.startAndWait();
+	}
+
+	@Test
+	@Transactional
+	public void testSearch(){
+		SearchSession searchSession = Search.session(this.em);
+		SearchScope<BookProduct> scope = searchSession.scope(BookProduct.class);
+		SearchResult<BookProduct> bookProduct = searchSession.search(scope).where(scope.predicate().match()
+			.fields("description", "name").matching("brązu").toPredicate()).fetchAll();
+		System.out.println(bookProduct.hits());
+	}
 }

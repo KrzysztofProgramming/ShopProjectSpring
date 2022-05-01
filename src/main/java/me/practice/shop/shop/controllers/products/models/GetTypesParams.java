@@ -1,5 +1,6 @@
 package me.practice.shop.shop.controllers.products.models;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
@@ -10,10 +11,11 @@ import javax.validation.constraints.PositiveOrZero;
 @EqualsAndHashCode(callSuper = true)
 @Data
 @NoArgsConstructor
+@AllArgsConstructor
 public class GetTypesParams extends PageableParams {
     private String searchPhrase = "";
     @PositiveOrZero
-    private Integer minProducts = null;
+    private Integer maxBooks = null;
     @PositiveOrZero
-    private Integer maxProducts = null;
+    private Integer minBooks = null;
 }

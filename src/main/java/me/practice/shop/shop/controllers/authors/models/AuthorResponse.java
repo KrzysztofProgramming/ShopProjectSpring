@@ -13,6 +13,6 @@ public class AuthorResponse {
     private Long writtenBooks;
 
     public AuthorResponse(Author author, Long writtenBooks){
-        this(author.getId(), author.getName(), author.getDescription(), 0L);
+        this(author.getId(), author.getName(), author.getDescription(), writtenBooks);
     }
 }

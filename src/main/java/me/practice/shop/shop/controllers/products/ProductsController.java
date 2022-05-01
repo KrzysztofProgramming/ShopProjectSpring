@@ -85,8 +85,7 @@ public class ProductsController {
     @PreAuthorize("hasAuthority('products:write')")
     @GetMapping(value="getTypesDetails")
     public ResponseEntity<?> getTypesDetails(@Valid GetTypesParams params){
-        Page<TypeDetailsResponse> result = this.typesRepository.getTypeResponses(
-                PageRequest.of(params.getPageNumber(), params.getPageSize())); //findByParams(params); TODO
+        Page<TypeDetailsResponse> result = this.typesManager.findTypeResponsesByParams(params); //findByParams(params); TODO
         return ResponseEntity.ok(new GetByParamsResponse<>(result.getNumber() + 1,
                 result.getTotalPages(), result.getTotalElements(), result.getContent()));
     }

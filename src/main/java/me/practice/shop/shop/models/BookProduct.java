@@ -1,6 +1,10 @@
 package me.practice.shop.shop.models;
 
 import lombok.*;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.FullTextField;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.GenericField;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.Indexed;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.IndexedEmbedded;
 
 import javax.persistence.*;
 import java.util.Set;
@@ -13,6 +17,7 @@ import java.util.Set;
 @Builder
 @Entity
 @Table(name = BookProduct.TABLE_NAME)
+@Indexed
 public class BookProduct {
 
     public static final String TABLE_NAME = "book_products_table";
@@ -25,28 +30,33 @@ public class BookProduct {
     private Long id;
 
     @Column(nullable = false)
+    @FullTextField
     private String name;
 
     @Column(nullable = false)
+    @GenericField
     private Double price;
 
     @Column(length = 1000)
+    @FullTextField()
     private String description;
 
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
             name = "books_authors",
-            joinColumns = @JoinColumn(name = "fk_book"),
-            inverseJoinColumns = @JoinColumn(name = "fk_author")
+            joinColumns = @JoinColumn(name = "book_id"),
+            inverseJoinColumns = @JoinColumn(name = "author_id")
     )
+    @IndexedEmbedded()
     private Set<Author> authors;
 
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
             name = "books_types",
-            joinColumns = @JoinColumn(name = "fk_book"),
-            inverseJoinColumns = @JoinColumn(name = "fk_type")
+            joinColumns = @JoinColumn(name = "book_id"),
+            inverseJoinColumns = @JoinColumn(name = "type_id")
     )
+    @IndexedEmbedded
     private Set<CommonType> types;
 
     private Integer inStock;

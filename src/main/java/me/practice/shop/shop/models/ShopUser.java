@@ -32,10 +32,13 @@ public class ShopUser {
 
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(name = "users_roles",
-            joinColumns = @JoinColumn(name = "fk_user"),
-            inverseJoinColumns = @JoinColumn(name="fk_role")
+            joinColumns = @JoinColumn(name = "user_id"),
+            inverseJoinColumns = @JoinColumn(name="role_id")
     )
     private Set<Role> roles;
+
+//    @OneToMany(mappedBy = "owner", fetch = FetchType.LAZY)
+//    private Set<ShopOrder> orders;
 
     @Embedded
     private UserInfo userInfo;

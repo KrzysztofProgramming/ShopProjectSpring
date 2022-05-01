@@ -1,5 +1,6 @@
 package me.practice.shop.shop.models;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.*;
 
 import javax.persistence.*;
@@ -26,7 +27,16 @@ public class ShopOrder {
     @Column(name = "order_id")
     @EqualsAndHashCode.Include
     private Long id;
+
+    @Column(name="owner_username")
     private String ownerUsername;
+
+    @MapKey
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "owner_username", insertable = false, updatable = false)
+    @ToString.Exclude
+    @JsonIgnore
+    private ShopUser owner;
 
     @Column(nullable = false)
     private String email;
@@ -35,7 +45,7 @@ public class ShopOrder {
 
     @ElementCollection()
     @CollectionTable(name = "order_products_ids",
-            joinColumns = @JoinColumn(name = "fk_order", referencedColumnName = "order_id"))
+            joinColumns = @JoinColumn(name = "order_id", referencedColumnName = "order_id"))
     @MapKeyColumn(name = "product_id")
     @Column(name = "product_count")
     private Map<Long, Integer> productsIds;

@@ -9,7 +9,6 @@ import me.practice.shop.shop.models.ErrorResponse;
 import me.practice.shop.shop.models.GetByParamsResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -30,8 +29,7 @@ public class AuthorsController {
 
     @GetMapping(value = "getAll")
     public ResponseEntity<?> getAuthors(@Valid GetAuthorsParams params){
-        Page<AuthorResponse> authors = this.authorsRepository.getAuthorResponses(PageRequest.of(params.getPageNumber() - 1,
-                params.getPageSize())); //TODO
+        Page<AuthorResponse> authors = this.authorsManager.findAuthorsResponsesByParams(params);
         return ResponseEntity.ok(new GetByParamsResponse<>(authors.getNumber() + 1, authors.getTotalPages(),
                 authors.getTotalElements(), authors.getContent()));
     }

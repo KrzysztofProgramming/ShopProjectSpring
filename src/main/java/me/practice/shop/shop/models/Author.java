@@ -1,8 +1,12 @@
 package me.practice.shop.shop.models;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.*;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.FullTextField;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.Indexed;
 
 import javax.persistence.*;
+import java.util.Set;
 
 @Entity
 @Data
@@ -12,6 +16,7 @@ import javax.persistence.*;
 @Builder
 @Table(name = Author.TABLE_NAME, uniqueConstraints = @UniqueConstraint(columnNames = "name", name = "uk_author_name"),
 indexes = @Index(columnList = "name", name = "index_author_name"))
+@Indexed
 public class Author {
     public final static String TABLE_NAME = "authors_table";
 
@@ -22,8 +27,20 @@ public class Author {
     @EqualsAndHashCode.Include
     private Long id;
 
+    @ToString.Exclude
+    @JsonIgnore
+    @ManyToMany(mappedBy = "authors", fetch = FetchType.LAZY)
+    Set<BookProduct> books;
+
     @Column(nullable = false)
+    @FullTextField
     private String name;
 
     private String description;
+
+    public Author(Long id, String name, String description) {
+        this.id = id;
+        this.name = name;
+        this.description = description;
+    }
 }

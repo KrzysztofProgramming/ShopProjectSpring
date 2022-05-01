@@ -1,0 +1,2 @@
+ALTER TABLE IF EXISTS order_products_ids ADD CONSTRAINT fk_products FOREIGN KEY (product_id) REFERENCES book_products_table (book_id);
+ALTER TABLE IF EXISTS cart_products_ids ADD CONSTRAINT fk_products FOREIGN KEY (product_id) REFERENCES book_products_table (book_id);

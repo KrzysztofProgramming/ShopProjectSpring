@@ -5,6 +5,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import me.practice.shop.shop.models.PageableParams;
+import me.practice.shop.shop.utils.AuthorsSortUtils;
 
 import javax.validation.constraints.Min;
 
@@ -18,4 +19,5 @@ public class GetAuthorsParams extends PageableParams {
     private Integer minBooks = null;
     @Min(0)
     private Integer maxBooks = null;
+    private String sort = AuthorsSortUtils.ALPHABETIC_ASC;
 }

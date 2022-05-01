@@ -42,14 +42,13 @@ public interface AuthorsRepository extends JpaRepository<Author, Long> {
     List<SimpleAuthor> getSimpleAuthorsList();
 
     @Query(value = "SELECT NEW me.practice.shop.shop.controllers.authors.models.AuthorResponse(" +
-            "a.id, a.name, a.description, COUNT(a)) " +
-            "FROM BookProduct b JOIN b.authors a GROUP BY a.id ORDER BY a.id")
+            "a.id, a.name, a.description, COUNT(a) as b_count) " +
+            "FROM #{#entityName} a JOIN a.books b GROUP BY a.id")
     Page<AuthorResponse> getAuthorResponses(Pageable pageable);
 
     @Query(value = "SELECT NEW me.practice.shop.shop.controllers.authors.models.AuthorResponse(" +
             "a.id, a.name, a.description, COUNT(a)) " +
-            "FROM BookProduct b JOIN b.authors a GROUP BY a.id HAVING a.id = ?1")
+            "FROM #{#entityName} a JOIN a.books b GROUP BY a.id HAVING a.id = ?1")
     Optional<AuthorResponse> getAuthorResponseById(Long id);
-
 
 }
