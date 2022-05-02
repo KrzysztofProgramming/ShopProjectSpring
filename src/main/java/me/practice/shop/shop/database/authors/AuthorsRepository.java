@@ -8,6 +8,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import javax.transaction.Transactional;
@@ -50,5 +51,16 @@ public interface AuthorsRepository extends JpaRepository<Author, Long> {
             "a.id, a.name, a.description, COUNT(a)) " +
             "FROM #{#entityName} a JOIN a.books b GROUP BY a.id HAVING a.id = ?1")
     Optional<AuthorResponse> getAuthorResponseById(Long id);
+
+    @Query(value = "SELECT NEW me.practice.shop.shop.controllers.authors.models.AuthorResponse(" +
+            "a.id, a.name, a.description, COUNT(b)) " +
+            "FROM #{#entityName} a LEFT JOIN a.books b GROUP BY a.id HAVING" +
+            " (:maxBooks IS NULL OR COUNT(b) <= :maxBooks)" +
+            " AND (:minBooks IS NULL OR COUNT(b) >= :minBooks)" +
+            " AND (:search IS NULL OR a.name LIKE :search)")
+    Page<AuthorResponse> findByParams(@Param("maxBooks") Integer maxBooks,
+                                      @Param("minBooks") Integer minBooks,
+                                      @Param("search") String searchPhrase,
+                                      Pageable pageable);
 
 }

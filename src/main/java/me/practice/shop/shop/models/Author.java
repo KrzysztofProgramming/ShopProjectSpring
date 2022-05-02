@@ -3,6 +3,7 @@ package me.practice.shop.shop.models;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.*;
 import org.hibernate.search.mapper.pojo.mapping.definition.annotation.FullTextField;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.GenericField;
 import org.hibernate.search.mapper.pojo.mapping.definition.annotation.Indexed;
 
 import javax.persistence.*;
@@ -25,6 +26,7 @@ public class Author {
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "author_sequence")
     @Column(name = "author_id")
     @EqualsAndHashCode.Include
+    @GenericField
     private Long id;
 
     @ToString.Exclude

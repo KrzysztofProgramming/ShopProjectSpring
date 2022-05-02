@@ -14,7 +14,7 @@ import javax.validation.constraints.Min;
 @AllArgsConstructor
 @NoArgsConstructor
 public class GetAuthorsParams extends PageableParams {
-    private String searchPhrase = "";
+    private String searchPhrase = null;
     @Min(0)
     private Integer minBooks = null;
     @Min(0)

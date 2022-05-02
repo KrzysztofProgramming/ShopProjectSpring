@@ -37,6 +37,14 @@ public enum Permissions {
                 .collect(Collectors.toSet());
     }
 
+    public static boolean hasOneOf(long userPermissions, long testingPermissions){
+        return (userPermissions & testingPermissions) > 0;
+    }
+
+    public static boolean hasAllOf(long userPermissions, long testingPermissions){
+        return (userPermissions & testingPermissions) == testingPermissions;
+    }
+
     public static long allPerms(){
         return (1<<10) - 1;
     }

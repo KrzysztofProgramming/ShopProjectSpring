@@ -30,6 +30,9 @@ public class AuthorsController {
     @GetMapping(value = "getAll")
     public ResponseEntity<?> getAuthors(@Valid GetAuthorsParams params){
         Page<AuthorResponse> authors = this.authorsManager.findAuthorsResponsesByParams(params);
+//        Page<AuthorResponse> authors = this.authorsRepository.findByParams(params.getMaxBooks(), params.getMinBooks(),
+//                params.getSearchPhrase(), PageRequest.of(params.getPageNumber() - 1, params.getPageSize())
+//                        .withSort(Sort.by("name").ascending()));
         return ResponseEntity.ok(new GetByParamsResponse<>(authors.getNumber() + 1, authors.getTotalPages(),
                 authors.getTotalElements(), authors.getContent()));
     }

@@ -1,9 +1,56 @@
 package me.practice.shop.shop.database.products;
 
+import me.practice.shop.shop.controllers.products.models.GetProductsParams;
 import me.practice.shop.shop.database.Searcher;
+import me.practice.shop.shop.models.BookProduct;
+import me.practice.shop.shop.utils.ProductsSortUtils;
+import org.apache.logging.log4j.util.Strings;
+import org.hibernate.search.engine.search.query.SearchResult;
+import org.hibernate.search.mapper.orm.Search;
+import org.hibernate.search.mapper.orm.scope.SearchScope;
+import org.hibernate.search.mapper.orm.session.SearchSession;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.support.PageableExecutionUtils;
+
+import javax.persistence.EntityManager;
+import javax.transaction.Transactional;
+import java.util.List;
 
 @SuppressWarnings("unused")
-public class ProductsSearcherImpl extends Searcher {
+public class ProductsSearcherImpl extends Searcher implements ProductsSearcher {
+    @Autowired
+    private EntityManager entityManager;
+
+    @Override
+    @Transactional
+    public Page<BookProduct> findByParams(GetProductsParams params) {
+        SearchSession searchSession = Search.session(this.entityManager);
+        SearchScope<BookProduct> scope = searchSession.scope(BookProduct.class);
+        SearchResult<BookProduct> result = searchSession.search(BookProduct.class).where(f-> {
+            var filter = f.bool()
+                    .must(f.range().field("price").between(params.getMinPrice(), params.getMaxPrice()))
+                    .must(f.range().field("inStock").between(params.getMinInStock(), params.getMaxInStock()));
+            if(params.getIsArchived()!=null)
+                filter = filter.must(f.match().fields("isArchived").matching(params.getIsArchived()));
+            if(params.getAuthors().size() > 0)
+                filter = filter.must(f.terms().field("authors.id").matchingAny(params.getAuthors()));
+            if(params.getTypes().size() > 0)
+                filter = filter.must(f.terms().field("types.id").matchingAny(params.getTypes()));
+            if(Strings.isNotEmpty(params.getSearchPhrase()))
+                filter = filter.must(f.match().fields("name", "authors.name", "types.name", "description")
+                        .matching(params.getSearchPhrase()));
+          return filter;
+        }).sort(f-> ProductsSortUtils.getSort(f, params.getSort()))
+                .fetch((params.getPageNumber()-1) * params.getPageSize(), params.getPageSize());
+        long totalCount = result.total().hitCount();
+        List<BookProduct> books = result.hits();
+
+        return PageableExecutionUtils.getPage(books,
+                PageRequest.of(params.getPageNumber() - 1, params.getPageSize()),
+                ()->totalCount);
+    }
 //    @Autowired
 //    private MongoTemplate mongoTemplate;
 //

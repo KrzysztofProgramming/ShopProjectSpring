@@ -78,13 +78,13 @@ public class TypesManager {
     public Page<TypeDetailsResponse> findTypeResponsesByParams(GetTypesParams params){
         StringBuilder queryBuilder = new StringBuilder(
                 "SELECT NEW me.practice.shop.shop.controllers.products.models.TypeDetailsResponse(" +
-                        "t.id, t.name, COUNT(t)) " +
+                        "t.id, t.name, COUNT(b)) " +
                         "FROM CommonType t JOIN t.books b GROUP BY t.id HAVING 1=1");
         StringBuilder counterBuilder = new StringBuilder(
                 "SELECT COUNT(t) FROM (SELECT " +
-                        "t.name, COUNT(t) " +
+                        "t.name, COUNT(b_t) " +
                         "FROM types_table t LEFT JOIN books_types b_t " +
-                        "ON t.type_id = b_t.fk_type " +
+                        "ON t.type_id = b_t.type_id " +
                         "GROUP BY t.type_id HAVING 1=1"
         );
         Collection<StringBuilder> builders = List.of(queryBuilder, counterBuilder);

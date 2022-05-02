@@ -2,6 +2,7 @@ package me.practice.shop.shop.models;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.*;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.GenericField;
 import org.hibernate.search.mapper.pojo.mapping.definition.annotation.Indexed;
 import org.hibernate.search.mapper.pojo.mapping.definition.annotation.KeywordField;
 
@@ -27,6 +28,7 @@ public class CommonType {
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "type_sequence")
     @Column(name = "type_id")
     @EqualsAndHashCode.Include
+    @GenericField
     private Long id;
 
     @Column(nullable = false)

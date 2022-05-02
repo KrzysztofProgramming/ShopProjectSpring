@@ -13,9 +13,9 @@ public class AuthorsSortUtils {
         return switch (code){
             case ALPHABETIC_ASC -> " ORDER BY a.name ASC";
             case ALPHABETIC_DESC -> " ORDER BY a.name DESC";
-            case WRITTEN_BOOKS_ASC -> " ORDER BY COUNT(a) ASC";
-            case WRITTEN_BOOKS_DESC -> " ORDER BY COUNT(a) DESC";
-            default -> "";
+            case WRITTEN_BOOKS_ASC -> " ORDER BY COUNT(b) ASC";
+            case WRITTEN_BOOKS_DESC -> " ORDER BY COUNT(b) DESC";
+            default -> " ORDER BY a.id ASC";
         };
     }
 

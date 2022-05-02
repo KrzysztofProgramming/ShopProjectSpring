@@ -3,6 +3,7 @@ package me.practice.shop.shop.controllers.products.models;
 import lombok.*;
 import me.practice.shop.shop.models.PageableParams;
 
+import javax.validation.constraints.NotNull;
 import javax.validation.constraints.PositiveOrZero;
 import java.util.ArrayList;
 import java.util.List;
@@ -17,19 +18,25 @@ public class GetProductsParams extends PageableParams {
     private String searchPhrase = "";
 
     @PositiveOrZero
-    private Double minPrice = null;
+    @NotNull
+    private Double minPrice = 0.0;
 
     @PositiveOrZero
     private Double maxPrice = null;
 
+    @NotNull
     private List<Long> types = new ArrayList<>();
 
     private String sort = "";
 
-    private List<Long> authorsNames = new ArrayList<>();
+    @NotNull
+    private List<Long> authors = new ArrayList<>();
 
     @PositiveOrZero
-    private Integer minInStock = null;
+    @NotNull
+    private Integer minInStock = 0;
     @PositiveOrZero
     private Integer maxInStock = null;
+
+    private Boolean isArchived = false;
 }

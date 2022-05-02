@@ -3,15 +3,17 @@ package me.practice.shop.shop.database.products;
 import me.practice.shop.shop.models.BookProduct;
 import me.practice.shop.shop.models.SimpleAuthor;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
+import javax.transaction.Transactional;
 import java.util.Collection;
 import java.util.Optional;
 import java.util.Set;
 
 @Repository
-public interface ProductsRepository extends JpaRepository<BookProduct, Long> {
+public interface ProductsRepository extends JpaRepository<BookProduct, Long>, ProductsSearcher {
     Optional<BookProduct> findByName(String name);
 
     @Query(value = "SELECT b FROM #{#entityName} b LEFT JOIN b.authors a WHERE a.id = ?1")
@@ -32,4 +34,12 @@ public interface ProductsRepository extends JpaRepository<BookProduct, Long> {
     @Query(value = "SELECT NEW me.practice.shop.shop.models.SimpleAuthor(a.id, a.name) " +
             "FROM #{#entityName} b LEFT JOIN b.authors a WHERE b.id = ?1" )
     Set<SimpleAuthor> getBookSimpleAuthors(Long id);
+
+    @Query(nativeQuery = true, value = "SELECT COUNT(*) FROM order_products_ids c WHERE c.product_id = ?1")
+    long getProductUsageInOrders(long id);
+
+    @Transactional
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
+    @Query("UPDATE #{#entityName} b SET b.isArchived = ?2 WHERE b.id = ?1")
+    int archiveProduct(long id, boolean value);
 }

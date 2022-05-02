@@ -1,18 +1,17 @@
 package me.practice.shop.shop.controllers.products;
 
-import me.practice.shop.shop.controllers.authors.AuthorsManager;
 import me.practice.shop.shop.controllers.products.models.*;
 import me.practice.shop.shop.database.files.DatabaseImage;
 import me.practice.shop.shop.database.files.ImageIdentifier;
 import me.practice.shop.shop.database.products.ProductsRepository;
 import me.practice.shop.shop.database.products.types.CommonTypesRepository;
 import me.practice.shop.shop.models.*;
+import me.practice.shop.shop.permissions.Permissions;
+import me.practice.shop.shop.services.FunctionsService;
 import me.practice.shop.shop.utils.MediaTypeUtils;
 import org.hibernate.TransientObjectException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Sort;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -42,20 +41,19 @@ public class ProductsController {
     private ProductsImagesManager productsImagesManager;
 
     @Autowired
-    private AuthorsManager authorsManager;
-
-    @Autowired
     private TypesManager typesManager;
 
     @Autowired
     private CommonTypesRepository typesRepository;
 
+    @Autowired
+    private FunctionsService functionsService;
+
 
     @GetMapping(value = "getAll")
     public ResponseEntity<?> getProducts(@Valid GetProductsParams params) {
 //        return ResponseEntity.ok(this.productsRepository.findAll());
-        Page<BookProduct> productPage = this.productsRepository.findAll(PageRequest.of(params.getPageNumber() - 1,
-                params.getPageSize()).withSort(Sort.by("id"))); // this.productsRepository.findByParams(params); TODO
+        Page<BookProduct> productPage = this.productsRepository.findByParams(params);
         Page<ProductResponse> responsePage = productPage.map(ProductResponse::new);
         return ResponseEntity.ok(new GetByParamsResponse<>(productPage.getNumber() + 1, productPage.getTotalPages(),
                 productPage.getTotalElements(), responsePage.toList()));
@@ -64,8 +62,12 @@ public class ProductsController {
 
     @GetMapping(value = "byId/{id}")
     public ResponseEntity<?> getProductById(@PathVariable Long id) {
+        Optional<ShopUser> user = this.functionsService.getUserIfLoggedIn();
+        boolean addDeletableFlag = user.isPresent() && Permissions.hasAllOf(user.get().getAuthoritiesNumber(),
+                Permissions.PRODUCTS_WRITE.getNumberValue());
         Optional<BookProduct> product = productsRepository.findById(id);
-        return product.isPresent() ? ResponseEntity.ok(product.map(ProductResponse::new))
+        return product.isPresent() ? ResponseEntity.ok(addDeletableFlag ?
+                new ProductResponse(product.get(), this.productsRepository) : new ProductResponse(product.get()))
                 : ResponseEntity.badRequest().body(productNotExistsInfo);
     }
 
@@ -85,7 +87,7 @@ public class ProductsController {
     @PreAuthorize("hasAuthority('products:write')")
     @GetMapping(value="getTypesDetails")
     public ResponseEntity<?> getTypesDetails(@Valid GetTypesParams params){
-        Page<TypeDetailsResponse> result = this.typesManager.findTypeResponsesByParams(params); //findByParams(params); TODO
+        Page<TypeDetailsResponse> result = this.typesManager.findTypeResponsesByParams(params);
         return ResponseEntity.ok(new GetByParamsResponse<>(result.getNumber() + 1,
                 result.getTotalPages(), result.getTotalElements(), result.getContent()));
     }
@@ -128,11 +130,24 @@ public class ProductsController {
     }
 
     @PreAuthorize("hasAuthority('products:write')")
+    @PutMapping(value = "archiveProduct/{id}")
+    public ResponseEntity<?> archiveProduct(@PathVariable Long id, @Valid @RequestBody ArchiveRequest request){
+        return this.productsRepository.archiveProduct(id, request.getArchive()) > 0 ?
+                ResponseEntity.ok().build() : ResponseEntity.badRequest().build();
+    }
+
+    @PreAuthorize("hasAuthority('products:write')")
     @PutMapping(value = "updateProduct/{id}")
     public ResponseEntity<?> updateProduct(@PathVariable Long id, @Valid @RequestBody ProductRequest request) {
+        Optional<BookProduct> product = this.productsRepository.findById(id);
+        if(product.isEmpty())
+            return ResponseEntity.badRequest().body(new ErrorResponse("Brak produktu o podanym id"));
+
+        BookProduct changedProduct = this.fromRequest(id, request);
+        changedProduct.setIsArchived(product.get().getIsArchived());
         try{
             return ResponseEntity.ok().body(new ProductResponse(
-                    this.productsRepository.save(this.fromRequest(id, request))
+                    this.productsRepository.save(changedProduct)
             ));
         }
         catch (TransientObjectException e){
@@ -140,16 +155,6 @@ public class ProductsController {
         }
     }
 
-//    private ResponseEntity<?> validateProductRequest(ProductRequest request,
-//                                                     BiFunction<Set<Author>, Set<CommonType>, ResponseEntity<?>> fn){
-//        Set<Author> authors = this.authorsManager.getAuthorsByNames(request.getAuthorsNames());
-//        if (authors.size() != request.getAuthorsNames().size())
-//            return ResponseEntity.badRequest().body(new ErrorResponse("Zły autor/autorzy"));
-//        Set<CommonType> types = this.typesManager.getTypesByNames(request.getTypes());
-//        if (types.size() != request.getTypes().size())
-//            return ResponseEntity.badRequest().body(new ErrorResponse("Zły typ/typy"));
-//        return fn.apply(authors, types);
-//    }
 
     @PreAuthorize("hasAuthority('products:write')")
     @DeleteMapping(value = "deleteProduct/{id}")
@@ -157,7 +162,7 @@ public class ProductsController {
         BookProduct removingProduct = this.productsRepository.findById(id).orElse(null);
         if(removingProduct==null) return ResponseEntity.ok().build();
         productsRepository.deleteById(id);
-        this.productsImagesManager.deleteProductImages(id);
+//        this.productsImagesManager.deleteProductImages(id);
         return ResponseEntity.ok().build();
     }
 

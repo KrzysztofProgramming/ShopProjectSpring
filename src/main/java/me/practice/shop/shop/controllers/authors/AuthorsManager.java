@@ -67,13 +67,13 @@ public class AuthorsManager {
     public Page<AuthorResponse> findAuthorsResponsesByParams(GetAuthorsParams params){
         StringBuilder queryBuilder = new StringBuilder(
                 "SELECT NEW me.practice.shop.shop.controllers.authors.models.AuthorResponse(" +
-                "a.id, a.name, a.description, COUNT(a)) " +
-                "FROM Author a JOIN a.books b GROUP BY a.id HAVING 1=1");
+                "a.id, a.name, a.description, COUNT(b)) " +
+                "FROM Author a LEFT JOIN a.books b GROUP BY a.id HAVING 1=1");
         StringBuilder counterBuilder = new StringBuilder(
                 "SELECT COUNT(a) FROM (SELECT " +
-                        "a.name, COUNT(a) as written_books " +
+                        "a.name, COUNT(b_a) as written_books " +
                         "FROM authors_table a LEFT JOIN books_authors b_a " +
-                        "ON a.author_id = b_a.fk_author " +
+                        "ON a.author_id = b_a.author_id " +
                         "GROUP BY a.author_id HAVING 1=1"
         );
         Collection<StringBuilder> builders = List.of(queryBuilder, counterBuilder);
@@ -101,6 +101,7 @@ public class AuthorsManager {
         resultQuery.setMaxResults(params.getPageSize());
 
         long totalCount = ((BigInteger) counterQuery.getSingleResult()).longValue();
+        System.out.println(totalCount);
         return PageableExecutionUtils.getPage(resultQuery.getResultList(),
                 PageRequest.of(params.getPageNumber() - 1, params.getPageSize()),
                 ()->totalCount);

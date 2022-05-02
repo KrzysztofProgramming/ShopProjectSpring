@@ -12,7 +12,7 @@ import javax.transaction.Transactional;
 import java.util.Optional;
 
 @Repository
-public interface OrdersRepository extends JpaRepository<ShopOrder, Long> {
+public interface OrdersRepository extends JpaRepository<ShopOrder, Long>, OrdersSearcher {
 
     @Query(value = "SELECT o FROM #{#entityName} o WHERE o.ownerUsername = ?1")
     Page<ShopOrder> findByOwnerUsername(String username, Pageable pageable);

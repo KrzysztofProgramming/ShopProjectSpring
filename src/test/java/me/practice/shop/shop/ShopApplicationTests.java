@@ -152,7 +152,7 @@ class ShopApplicationTests {
 		SearchSession searchSession = Search.session(this.em);
 
 		MassIndexer indexer = searchSession.massIndexer(BookProduct.class )
-				.threadsToLoadObjects(7);
+				.threadsToLoadObjects(8);
 
 		indexer.startAndWait();
 	}
@@ -165,5 +165,14 @@ class ShopApplicationTests {
 		SearchResult<BookProduct> bookProduct = searchSession.search(scope).where(scope.predicate().match()
 			.fields("description", "name").matching("brązu").toPredicate()).fetchAll();
 		System.out.println(bookProduct.hits());
+	}
+
+	@Test
+	@Transactional
+	public void testSave(){
+		this.productsRepository.save(BookProduct.builder().id(20L).name("test").price(10.0).build());
+//		this.productsRepository.save();
+//		System.out.println(this.productsRepository.findById(20L));
+//		this.em.flush();
 	}
 }

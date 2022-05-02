@@ -169,9 +169,7 @@ public class UsersController {
     public ResponseEntity<?> getUserOrders(@Valid GetOrdersParams params){
         return this.functions.ifUserLoggedIn(user ->{
 //            return ResponseEntity.ok(new GetByParamsResponse<>())
-            Page<ShopOrder> page = this.ordersRepository.findByOwnerUsername(user.getUsername(),
-                    PageRequest.of(params.getPageNumber() - 1, params.getPageSize()));
-            //TODO
+            Page<ShopOrder> page = this.ordersRepository.getByParams(params, user.getUsername());
             return ResponseEntity.ok(new GetByParamsResponse<>(
                     page.getNumber() + 1, page.getTotalPages(), page.getTotalElements(), page.getContent()));
         });

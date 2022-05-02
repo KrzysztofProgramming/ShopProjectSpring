@@ -13,7 +13,10 @@ import java.util.Map;
 @NoArgsConstructor
 @Builder
 @Entity
-@Table(name = ShopOrder.TABLE_NAME, indexes = @Index(name = "index_order_email", columnList = "email"))
+@Table(name = ShopOrder.TABLE_NAME, indexes = {
+        @Index(name = "index_order_email", columnList = "email"),
+        @Index(name = "index_order_owner", columnList = "owner_username")
+})
 public class ShopOrder {
     public static final int PAID = 1;
     public static final int CANCELLED = 2;
@@ -31,7 +34,6 @@ public class ShopOrder {
     @Column(name="owner_username")
     private String ownerUsername;
 
-    @MapKey
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "owner_username", insertable = false, updatable = false)
     @ToString.Exclude
@@ -53,8 +55,19 @@ public class ShopOrder {
     private Double totalPrice;
     private Integer status;
 
+    public void setOwner(ShopUser owner) {
+        this.owner = owner;
+        this.ownerUsername = owner.getUsername();
+    }
+
+    public void setOwnerUsername(String ownerUsername){
+        this.ownerUsername = ownerUsername;
+        this.owner = ShopUser.builder().username(ownerUsername).build();
+    }
+
     public ShopOrder(String ownerUsername, String email, UserInfo info, Map<Long, Integer> productsIds, Date issuedDate, Double totalPrice, Integer status) {
         this.ownerUsername = ownerUsername;
+        this.owner = ShopUser.builder().username(ownerUsername).build();
         this.email = email;
         this.info = info;
         this.productsIds = productsIds;
