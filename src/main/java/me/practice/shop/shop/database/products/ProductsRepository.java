@@ -2,6 +2,8 @@ package me.practice.shop.shop.database.products;
 
 import me.practice.shop.shop.models.BookProduct;
 import me.practice.shop.shop.models.SimpleAuthor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -13,7 +15,7 @@ import java.util.Optional;
 import java.util.Set;
 
 @Repository
-public interface ProductsRepository extends JpaRepository<BookProduct, Long>, ProductsSearcher {
+public interface ProductsRepository extends JpaRepository<BookProduct, Long> {
     Optional<BookProduct> findByName(String name);
 
     @Query(value = "SELECT b FROM #{#entityName} b LEFT JOIN b.authors a WHERE a.id = ?1")
@@ -42,5 +44,8 @@ public interface ProductsRepository extends JpaRepository<BookProduct, Long>, Pr
     @Modifying(flushAutomatically = true, clearAutomatically = true)
     @Query("UPDATE #{#entityName} b SET b.isArchived = ?2 WHERE b.id = ?1")
     int archiveProduct(long id, boolean value);
+
+    @Query("SELECT b FROM #{#entityName} b WHERE b.id IN ?1")
+    Page<BookProduct> findAllByIds(Collection<Long> ids, Pageable pageable);
 
 }

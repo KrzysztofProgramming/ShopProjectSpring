@@ -4,6 +4,7 @@ import me.practice.shop.shop.controllers.products.models.*;
 import me.practice.shop.shop.database.files.DatabaseImage;
 import me.practice.shop.shop.database.files.ImageIdentifier;
 import me.practice.shop.shop.database.products.ProductsRepository;
+import me.practice.shop.shop.database.products.ProductsSearcher;
 import me.practice.shop.shop.database.products.types.CommonTypesRepository;
 import me.practice.shop.shop.models.*;
 import me.practice.shop.shop.permissions.Permissions;
@@ -49,11 +50,13 @@ public class ProductsController {
     @Autowired
     private FunctionsService functionsService;
 
+    @Autowired
+    private ProductsSearcher productsSearcher;
 
     @GetMapping(value = "getAll")
     public ResponseEntity<?> getProducts(@Valid GetProductsParams params) {
 //        return ResponseEntity.ok(this.productsRepository.findAll());
-        Page<BookProduct> productPage = this.productsRepository.findByParams(params);
+        Page<BookProduct> productPage = this.productsSearcher.findByParams(params);
         Page<ProductResponse> responsePage = productPage.map(ProductResponse::new);
         return ResponseEntity.ok(new GetByParamsResponse<>(productPage.getNumber() + 1, productPage.getTotalPages(),
                 productPage.getTotalElements(), responsePage.toList()));
