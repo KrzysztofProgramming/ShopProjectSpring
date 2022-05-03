@@ -14,7 +14,7 @@ import java.util.UUID;
 @Builder
 @Entity
 @Table(name = ResetPasswordToken.TABLE_NAME,
-        indexes = @Index(name = "index_owner_username", columnList = "ownerUsername"))
+        indexes = @Index(name = "reset_owner_idx", columnList = "ownerUsername"))
 public class ResetPasswordToken {
     public final static String TABLE_NAME = "reset_tokens_table";
 

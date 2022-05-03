@@ -12,7 +12,7 @@ import java.util.Map;
 @NoArgsConstructor
 @Data
 @AllArgsConstructor
-@Table(name = ShoppingCart.TABLE_NAME, indexes = @Index(name = "index_expire_date", columnList = "expireDate"))
+@Table(name = ShoppingCart.TABLE_NAME, indexes = @Index(name = "expire_date_idx", columnList = "expireDate"))
 public class ShoppingCart {
     public static final String TABLE_NAME = "shopping_carts_table";
 

@@ -13,7 +13,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @Builder
 @Entity
-@Table(name = RefreshToken.TABLE_NAME, indexes = @Index(name = "index_username", columnList = "username"))
+@Table(name = RefreshToken.TABLE_NAME, indexes = @Index(name = "refresh_owner_idx", columnList = "username"))
 public class RefreshToken {
     public static final String TABLE_NAME = "refresh_tokens_table";
 

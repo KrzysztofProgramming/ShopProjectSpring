@@ -3,8 +3,6 @@ package me.practice.shop.shop.models;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.*;
 import me.practice.shop.shop.database.files.DatabaseImage;
-import org.hibernate.search.engine.backend.types.Sortable;
-import org.hibernate.search.mapper.pojo.mapping.definition.annotation.*;
 
 import javax.persistence.*;
 import java.util.Set;
@@ -16,8 +14,12 @@ import java.util.Set;
 @NoArgsConstructor
 @Builder
 @Entity
-@Table(name = BookProduct.TABLE_NAME, indexes = @Index(name = "index_product_archived", columnList = "isArchived"))
-@Indexed
+@Table(name = BookProduct.TABLE_NAME, indexes =
+        {
+                @Index(name = "product_archived_idx", columnList = "isArchived"),
+                @Index(name = "product_price_idx", columnList = "price"),
+                @Index(name = "product_in_stock_idx", columnList = "inStock")
+        })
 public class BookProduct {
 
     public static final String TABLE_NAME = "book_products_table";
@@ -27,20 +29,15 @@ public class BookProduct {
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "book_product_sequence")
     @EqualsAndHashCode.Include
     @Column(name = "book_id")
-    @GenericField(sortable = Sortable.YES)
     private Long id;
 
     @Column(nullable = false)
-    @FullTextField()
-    @KeywordField(sortable = Sortable.YES, name = "name_sort")
     private String name;
 
     @Column(nullable = false)
-    @GenericField(sortable = Sortable.YES)
     private Double price;
 
     @Column(length = 1000)
-    @FullTextField()
     private String description;
 
     @OneToMany(fetch = FetchType.LAZY, mappedBy = "product")
@@ -54,7 +51,6 @@ public class BookProduct {
             joinColumns = @JoinColumn(name = "book_id"),
             inverseJoinColumns = @JoinColumn(name = "author_id")
     )
-    @IndexedEmbedded()
     private Set<Author> authors;
 
     @ManyToMany(fetch = FetchType.LAZY)
@@ -63,13 +59,11 @@ public class BookProduct {
             joinColumns = @JoinColumn(name = "book_id"),
             inverseJoinColumns = @JoinColumn(name = "type_id")
     )
-    @IndexedEmbedded
     private Set<CommonType> types;
 
-    @GenericField
     private Integer inStock;
 
-    @GenericField
+    @Builder.Default
     private Boolean isArchived = false; //TODO implement it
 
 }

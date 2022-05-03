@@ -2,9 +2,6 @@ package me.practice.shop.shop.models;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.*;
-import org.hibernate.search.mapper.pojo.mapping.definition.annotation.FullTextField;
-import org.hibernate.search.mapper.pojo.mapping.definition.annotation.GenericField;
-import org.hibernate.search.mapper.pojo.mapping.definition.annotation.Indexed;
 
 import javax.persistence.*;
 import java.util.Set;
@@ -16,8 +13,7 @@ import java.util.Set;
 @AllArgsConstructor
 @Builder
 @Table(name = Author.TABLE_NAME, uniqueConstraints = @UniqueConstraint(columnNames = "name", name = "uk_author_name"),
-indexes = @Index(columnList = "name", name = "index_author_name"))
-@Indexed
+indexes = @Index(columnList = "name", name = "author_name_idx"))
 public class Author {
     public final static String TABLE_NAME = "authors_table";
 
@@ -26,7 +22,6 @@ public class Author {
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "author_sequence")
     @Column(name = "author_id")
     @EqualsAndHashCode.Include
-    @GenericField
     private Long id;
 
     @ToString.Exclude
@@ -35,7 +30,6 @@ public class Author {
     Set<BookProduct> books;
 
     @Column(nullable = false)
-    @FullTextField
     private String name;
 
     private String description;

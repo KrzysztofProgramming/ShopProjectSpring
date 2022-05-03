@@ -14,8 +14,8 @@ import java.util.Map;
 @Builder
 @Entity
 @Table(name = ShopOrder.TABLE_NAME, indexes = {
-        @Index(name = "index_order_email", columnList = "email"),
-        @Index(name = "index_order_owner", columnList = "owner_username")
+        @Index(name = "order_email_idx", columnList = "email"),
+        @Index(name = "order_owner_idx", columnList = "owner_username")
 })
 public class ShopOrder {
     public static final int PAID = 1;

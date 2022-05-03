@@ -1,80 +1,119 @@
 package me.practice.shop.shop.database.products;
 
 import me.practice.shop.shop.controllers.products.models.GetProductsParams;
+import me.practice.shop.shop.database.ParamsApplicator;
 import me.practice.shop.shop.database.Searcher;
 import me.practice.shop.shop.models.BookProduct;
-import me.practice.shop.shop.utils.ProductsSortUtils;
 import org.apache.logging.log4j.util.Strings;
-import org.hibernate.search.engine.search.query.SearchResult;
-import org.hibernate.search.mapper.orm.Search;
-import org.hibernate.search.mapper.orm.scope.SearchScope;
-import org.hibernate.search.mapper.orm.session.SearchSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.support.PageableExecutionUtils;
 
 import javax.persistence.EntityManager;
+import javax.persistence.Query;
 import javax.transaction.Transactional;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @SuppressWarnings("unused")
 public class ProductsSearcherImpl extends Searcher implements ProductsSearcher {
     @Autowired
     private EntityManager entityManager;
+    
+    private final String FULL_TEXT_QUERY = "( " +
+            " ( " +
+            "  SELECT b.* FROM book_products_table b " +
+            "  WHERE textsearchable_index_col @@ plainto_tsquery('english', :search) " +
+            " ) " +
+            " UNION " +
+            " ( " +
+            "  SELECT b.* FROM book_products_table b " +
+            "  JOIN books_authors b_a ON b_a.book_id = b.book_id " +
+            "  JOIN ( " +
+            "   SELECT a.author_id FROM authors_table a " +
+            "   WHERE textsearchable_index_col @@ plainto_tsquery('english', :search) " +
+            "  ) a ON a.author_id = b_a.author_id " +
+            "  GROUP BY b.book_id " +
+            " ) " +
+            " UNION " +
+            " ( " +
+            "  SELECT b.* FROM book_products_table b " +
+            "  JOIN books_types b_t ON b_t.book_id = b.book_id " +
+            "  JOIN ( " +
+            "   SELECT t.type_id FROM types_table t " +
+            "   WHERE textsearchable_index_col @@ plainto_tsquery('english', :search) " +
+            "  ) t ON b_t.type_id = t.type_id " +
+            "  GROUP BY b.book_id " +
+            " ) " +
+            ")";
 
     @Override
     @Transactional
+    @SuppressWarnings("unchecked")
     public Page<BookProduct> findByParams(GetProductsParams params) {
-        SearchSession searchSession = Search.session(this.entityManager);
-        SearchScope<BookProduct> scope = searchSession.scope(BookProduct.class);
-        SearchResult<BookProduct> result = searchSession.search(BookProduct.class).where(f-> {
-            var filter = f.bool()
-                    .must(f.range().field("price").between(params.getMinPrice(), params.getMaxPrice()))
-                    .must(f.range().field("inStock").between(params.getMinInStock(), params.getMaxInStock()));
-            if(params.getIsArchived()!=null)
-                filter = filter.must(f.match().fields("isArchived").matching(params.getIsArchived()));
-            if(params.getAuthors().size() > 0)
-                filter = filter.must(f.terms().field("authors.id").matchingAny(params.getAuthors()));
-            if(params.getTypes().size() > 0)
-                filter = filter.must(f.terms().field("types.id").matchingAny(params.getTypes()));
-            if(Strings.isNotEmpty(params.getSearchPhrase()))
-                filter = filter.must(f.match().fields("name", "authors.name", "types.name", "description")
-                        .matching(params.getSearchPhrase()));
-          return filter;
-        }).sort(f-> ProductsSortUtils.getSort(f, params.getSort()))
-                .fetch((params.getPageNumber()-1) * params.getPageSize(), params.getPageSize());
-        long totalCount = result.total().hitCount();
-        List<BookProduct> books = result.hits();
+        StringBuilder mainBuilder = new StringBuilder("SELECT b.book_id, b.price, b.description," +
+                " b.in_stock, b.is_archived, b.name," +
+                " COUNT(*) OVER() as total_elements FROM ");
+        if(Strings.isNotEmpty(params.getSearchPhrase()))
+            mainBuilder.append(FULL_TEXT_QUERY);
+        else
+            mainBuilder.append("book_products_table");
+        mainBuilder.append(" b");
 
-        return PageableExecutionUtils.getPage(books,
+        if(params.getTypes().size() > 0)
+            mainBuilder.append(" LEFT JOIN books_types b_t ON b_t.book_id = b.book_id");
+        if(params.getAuthors().size() > 0)
+            mainBuilder.append(" LEFT JOIN books_authors b_a ON b_a.book_id = b.book_id");
+        mainBuilder.append(" WHERE 1=1");
+
+        if(params.getAuthors().size() > 0)
+            mainBuilder.append(" AND b_a.author_id IN :authors");
+        if(params.getTypes().size() > 0)
+            mainBuilder.append(" AND b_t.type_id IN :types");
+        if(params.getIsArchived()!=null)
+            mainBuilder.append(" AND b.is_archived = :archived");
+        if(params.getMaxInStock()!=null)
+            mainBuilder.append(" AND b.in_stock <= :maxStock");
+        if(params.getMinInStock()!=null)
+            mainBuilder.append(" AND b.in_stock >= :minStock");
+        if(params.getMaxPrice()!=null)
+            mainBuilder.append(" AND b.price <= :maxPrice");
+        if(params.getMinPrice()!=null)
+            mainBuilder.append(" AND b.price >= :minPrice");
+        mainBuilder.append(" GROUP BY b.book_id, b.price, b.description, b.in_stock, b.is_archived, b.name");
+
+        Query mainQuery = this.entityManager.createNativeQuery(mainBuilder.toString());
+        this.applyParams(mainQuery, params);
+        mainQuery.setFirstResult((params.getPageNumber() - 1) * params.getPageSize());
+        mainQuery.setMaxResults((params.getPageSize()));
+        List<ProductQueryResult> result = ((Stream<ProductQueryResult>) mainQuery.getResultList().stream()
+                .map(ProductQueryResult::new)).collect(Collectors.toList());
+        long totalCount = result.size() == 0 ? 0 : result.get(0).getTotalElements();
+        return PageableExecutionUtils.getPage(result.stream().map(ProductQueryResult::toProduct)
+                        .collect(Collectors.toList()),
                 PageRequest.of(params.getPageNumber() - 1, params.getPageSize()),
-                ()->totalCount);
-    }
-//    @Autowired
-//    private MongoTemplate mongoTemplate;
+                  ()->totalCount);
 //
-//    @Override
-//    public Page<BookProduct> findByParams(GetProductsParams params) {
-//        Query query;
-//        if(Strings.isNotEmpty(params.getSearchPhrase())) {
-//            query = new TextQuery(params.getSearchPhrase());
-//            if(ProductsSortUtils.isEmpty(params.getSort()))
-//                ((TextQuery)query).sortByScore();
-//        }
-//        else{
-//            query = new Query();
-//        }
-//        applyCriteria(query, this.generatePriceCriteria(params));
-//        applyCriteria(query, this.generateStockCriteria(params));
-//        applyCriteria(query, this.generateTypesCriteria(params));
-//        applyCriteria(query, this.generateAuthorsCriteria(params));
-//        Pageable pageable = PageRequest.of(params.getPageNumber() - 1, params.getPageSize());
-//        query.with(pageable);
-//        query.with(ProductsSortUtils.getSort(params.getSort()));
-//        return PageableExecutionUtils.getPage(mongoTemplate.find(query, BookProduct.class), pageable,
-//                () -> mongoTemplate.count(Query.of(query).limit(-1).skip(-1), BookProduct.class));
-//    }
+//        return PageableExecutionUtils.getPage(books,
+//                PageRequest.of(params.getPageNumber() - 1, params.getPageSize()),
+//                ()->totalCount);
+    }
+
+    public Query applyParams(Query query, GetProductsParams params){
+        return new ParamsApplicator(query)
+                .applyParam("authors", params.getAuthors())
+                .applyParam("types", params.getTypes())
+                .applyParam("maxPrice", params.getMaxPrice())
+                .applyParam("minPrice", params.getMinPrice())
+                .applyParam("minStock", params.getMinInStock())
+                .applyParam("maxStock", params.getMaxInStock())
+                .applyParam("search", params.getSearchPhrase())
+                .applyParam("archived", params.getIsArchived())
+                .getQuery();
+    }
+
 //
 //    @Override
 //    public boolean allExistByIds(Collection<String> ids) {

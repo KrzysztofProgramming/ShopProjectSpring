@@ -6,11 +6,6 @@ import me.practice.shop.shop.database.products.types.CommonTypesRepository;
 import me.practice.shop.shop.database.users.RolesRepository;
 import me.practice.shop.shop.database.users.UsersRepository;
 import me.practice.shop.shop.models.*;
-import org.hibernate.search.engine.search.query.SearchResult;
-import org.hibernate.search.mapper.orm.Search;
-import org.hibernate.search.mapper.orm.massindexing.MassIndexer;
-import org.hibernate.search.mapper.orm.scope.SearchScope;
-import org.hibernate.search.mapper.orm.session.SearchSession;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -21,6 +16,7 @@ import javax.persistence.EntityManager;
 import javax.transaction.Transactional;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @SpringBootTest
 class ShopApplicationTests {
@@ -56,8 +52,8 @@ class ShopApplicationTests {
 
 	@Test
 	void createExampleAuthors(){
-		List<Author> authors = new ArrayList<>(2000);
-		for(int i=0; i<2000; i++) {
+		List<Author> authors = new ArrayList<>(4000);
+		for(int i=0; i<4000; i++) {
 			Author author = Author.builder()
 					.name(this.exampleNames.get((int) (Math.random() * this.exampleNames.size())) + Math.random())
 					.description(Math.random() > 0.5 ? "Przykładowy opis autora" : null)
@@ -69,8 +65,8 @@ class ShopApplicationTests {
 
 	@Test
 	void createExampleTypes(){
-		List<CommonType> types = new ArrayList<>(1000);
-		for(int i=0; i<1000; i++) {
+		List<CommonType> types = new ArrayList<>(1400);
+		for(int i=0; i<1400; i++) {
 			CommonType type = CommonType.builder()
 					.name(UUID.randomUUID().toString())
 					.build();
@@ -81,8 +77,8 @@ class ShopApplicationTests {
 
 	@Test
 	void createExampleProducts(){
-		List<BookProduct> books = new ArrayList<>(8000);
-		for(int i=0; i<8000; i++){
+		List<BookProduct> books = new ArrayList<>(20000);
+		for(int i=0; i<20000; i++){
 			BookProduct book = BookProduct.builder()
 					.name(UUID.randomUUID().toString().replaceAll("-", ""))
 					.price((Math.random() * 100 + 1))
@@ -96,16 +92,33 @@ class ShopApplicationTests {
 		this.productsRepository.saveAll(books);
 	}
 
+	@Test
+	void createTypesWithRange(){
+		List<CommonType> types = new ArrayList<>(300);
+		for(int i = 1601; i<=1900; i++){
+			if(i==1614 || i ==1675) continue;
+			CommonType type = CommonType.builder()
+					.id((long)i)
+					.name(UUID.randomUUID().toString())
+					.build();
+			types.add(type);
+		}
+		System.out.println(types);
+		this.typesRepository.saveAllAndFlush(types);
+	}
+
 	private final Random random = new Random();
 
 	public Set<Author> randomAuthors(){
-		return random.longs(random.nextInt(20) + 1, 1, 6001).boxed()
+		return random.longs(random.nextInt(30) + 1, 1, 10001).boxed()
 				.map(id->Author.builder().id(id).build()).collect(Collectors.toSet());
 	}
 
 	public Set<CommonType> randomTypes(){
-		return random.longs(random.nextInt(20) + 1, 1, 1601).boxed()
-				.map(id->CommonType.builder().id(id).build()).collect(Collectors.toSet());
+		return Stream.concat(random.longs(random.nextInt(10) + 1, 1, 1605).boxed()
+				.map(id->CommonType.builder().id(id).build()),
+				random.longs(random.nextInt(20) + 1, 1901, 4190).boxed()
+						.map(id->CommonType.builder().id(id).build())).collect(Collectors.toSet());
 	}
 
 	@Test
@@ -146,33 +159,9 @@ class ShopApplicationTests {
 		System.out.println(this.typesRepository.getTypeResponses(PageRequest.of(0, 50)).toList());
 	}
 
-	@Test
-	@Transactional
-	public void initialIndexing() throws InterruptedException {
-		SearchSession searchSession = Search.session(this.em);
-
-		MassIndexer indexer = searchSession.massIndexer(BookProduct.class )
-				.threadsToLoadObjects(8);
-
-		indexer.startAndWait();
-	}
-
-	@Test
-	@Transactional
-	public void testSearch(){
-		SearchSession searchSession = Search.session(this.em);
-		SearchScope<BookProduct> scope = searchSession.scope(BookProduct.class);
-		SearchResult<BookProduct> bookProduct = searchSession.search(scope).where(scope.predicate().match()
-			.fields("description", "name").matching("brązu").toPredicate()).fetchAll();
-		System.out.println(bookProduct.hits());
-	}
 
 	@Test
 	@Transactional
 	public void testSave(){
-		this.productsRepository.save(BookProduct.builder().id(20L).name("test").price(10.0).build());
-//		this.productsRepository.save();
-//		System.out.println(this.productsRepository.findById(20L));
-//		this.em.flush();
 	}
 }

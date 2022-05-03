@@ -15,11 +15,10 @@ import java.util.List;
 @NoArgsConstructor
 public class GetProductsParams extends PageableParams {
 
-    private String searchPhrase = "";
+    private String searchPhrase = null;
 
     @PositiveOrZero
-    @NotNull
-    private Double minPrice = 0.0;
+    private Double minPrice = null;
 
     @PositiveOrZero
     private Double maxPrice = null;
@@ -27,14 +26,13 @@ public class GetProductsParams extends PageableParams {
     @NotNull
     private List<Long> types = new ArrayList<>();
 
-    private String sort = "";
+    private String sort = null;
 
     @NotNull
     private List<Long> authors = new ArrayList<>();
 
     @PositiveOrZero
-    @NotNull
-    private Integer minInStock = 0;
+    private Integer minInStock = null;
     @PositiveOrZero
     private Integer maxInStock = null;
 

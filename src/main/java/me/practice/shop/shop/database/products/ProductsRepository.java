@@ -42,4 +42,5 @@ public interface ProductsRepository extends JpaRepository<BookProduct, Long>, Pr
     @Modifying(flushAutomatically = true, clearAutomatically = true)
     @Query("UPDATE #{#entityName} b SET b.isArchived = ?2 WHERE b.id = ?1")
     int archiveProduct(long id, boolean value);
+
 }
