@@ -30,10 +30,8 @@ import org.springframework.web.bind.annotation.*;
 import javax.validation.Valid;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.StreamSupport;
 
 @RestController
-@CrossOrigin(origins = "*", maxAge = 3600)
 @RequestMapping(value = "api/users")
 public class UsersController {
 
@@ -175,14 +173,6 @@ public class UsersController {
         });
 
     }
-//    @GetMapping("cart/test")
-//    public ResponseEntity<?> addProductToCart(){
-//        return ResponseEntity.ok(this.cartsRepository.save(new ShoppingCart("siema",
-//                Map.of("produkt1", 10, "produkt2", 15),
-//                new Date(System.currentTimeMillis() + 1000 * 60 * 20))));
-////        return ResponseEntity.ok(this.cartsRepository.findById("33c2ddd8-9149-4e68-a3b1-6570ceba282f"));
-//
-//    }
 
     @PutMapping("cart/setProduct")
     public ResponseEntity<?> setProductInCart(@Valid @RequestBody CartProductRequest request){
@@ -201,7 +191,10 @@ public class UsersController {
             return ResponseEntity.badRequest().body(new ErrorResponse("Taki produkt nie istnieje"));
         if(product.get().getInStock() < request.getAmount())
             return ResponseEntity.badRequest().body(new ErrorResponse("Podana ilość nie jest już dostępna"));
+        if(product.get().getIsArchived())
+            return ResponseEntity.badRequest().body(new ErrorResponse("Ten produkt został wycofany"));
         cart.getItems().put(product.get().getId(), request.getAmount());
+
         return ResponseEntity.ok(this.cartsRepository.save(cart));
     }
 
@@ -218,16 +211,18 @@ public class UsersController {
     public ResponseEntity<?> setCart(@Valid @RequestBody SetCartRequest request){
         return functions.ifUserLoggedIn(user->{
             ShoppingCart cart = this.cartsService.cartFromRequest(user.getUsername(), request.getProducts());
-            List<Long> productIds = cart.getItems().keySet().stream().toList();
-            Iterable<BookProduct> products = this.productsRepository.findAllById(productIds);
+            List<Long> productsIds = cart.getItems().keySet().stream().toList();
+            List<BookProduct> products = this.productsRepository.findAllById(productsIds);
+            if(products.size() < productsIds.size())
+                return ResponseEntity.badRequest().body(new ErrorResponse("Niektóre z podanych produktów nie istnieją"));
 
-            if(productIds.size() != StreamSupport.stream(products.spliterator(), false).count())
+            if(productsIds.size() != (long) products.size())
                 return ResponseEntity.badRequest().body(new ErrorResponse("Podano błędny produkt"));
 
-            if(!StreamSupport.stream(products.spliterator(), false).allMatch(product->
+            if(products.stream().anyMatch(product->
                     !cart.getItems().containsKey(product.getId()) ||
                     product.getInStock()
-                    >= cart.getItems().get(product.getId()))
+                    <= cart.getItems().get(product.getId()) || !product.getIsArchived())
             ) {
                 return ResponseEntity.badRequest().body(new ErrorResponse("Nie wszystkie produkty są dostępne"));
             }

@@ -15,6 +15,10 @@ import java.util.List;
 @NoArgsConstructor
 public class GetProductsParams extends PageableParams {
 
+    public static final int ALL_PRODUCTS = -1;
+    public static final int ARCHIVED_PRODUCTS = 1;
+    public static final int AVAILABLE_PRODUCTS = 0;
+
     private String searchPhrase = null;
 
     @PositiveOrZero
@@ -36,5 +40,5 @@ public class GetProductsParams extends PageableParams {
     @PositiveOrZero
     private Integer maxInStock = null;
 
-    private Boolean isArchived = false;
+    private Integer isArchived = AVAILABLE_PRODUCTS;
 }

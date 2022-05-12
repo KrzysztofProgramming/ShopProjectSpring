@@ -25,7 +25,6 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @RestController
-@CrossOrigin(origins = "http://localhost:4200", maxAge = 3600)
 @RequestMapping(value = "api/perms/")
 public class PermsController {
 

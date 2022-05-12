@@ -18,7 +18,6 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 @RestController
-@CrossOrigin(origins = "*", maxAge = 3600)
 @RequestMapping(value = "api/orders/")
 public class OrdersController {
 
@@ -40,6 +39,9 @@ public class OrdersController {
             return ResponseEntity.badRequest().body(new ErrorResponse("Dokończ płatność poprzedniego zamówienia"));
         List<BookProduct> products = this.productsRepository.findAllById(request.getProducts().keySet());
         if(products.size() < request.getProducts().size()){
+            return ResponseEntity.badRequest().body("Nie wszystkie produkty istnieją");
+        }
+        if(!areProductsAvailable(request, products)){
             return ResponseEntity.badRequest().body("Nie wszystkie produkty są dostępne");
         }
         Optional<ShopUser> user = this.functionsService.getUserIfLoggedIn();
@@ -57,13 +59,23 @@ public class OrdersController {
     @PutMapping("payOrder/{id}")
     public ResponseEntity<?> payOrder(@PathVariable Long id){
         return this.ordersService.payOrder(id) ? ResponseEntity.ok().build() :
-                ResponseEntity.badRequest().body(new ErrorResponse("Brak zamówienia o podanym id"));
+                ResponseEntity.badRequest().body(new ErrorResponse("Błąd przy płatności zamówienia"));
     }
 
     @PutMapping("cancelOrder/{id}")
     public ResponseEntity<?> cancelOrder(@PathVariable Long id){
         return this.ordersService.cancelOrder(id) ? ResponseEntity.ok().build() :
-                ResponseEntity.badRequest().body(new ErrorResponse("Brak zamówienia o podanym id"));
+                ResponseEntity.badRequest().body(new ErrorResponse("Nie udało się anulować zamówienia"));
+    }
+
+    private boolean areProductsAvailable(NewOrderRequest request, List<BookProduct> products){
+        try {
+            return products.stream().allMatch(product -> !product.getIsArchived()
+                    && request.getProducts().get(product.getId()) <= product.getInStock());
+        }
+        catch (NullPointerException e){
+            return false;
+        }
     }
 
     private double calcTotalPrice(List<BookProduct> products, Map<Long, Integer> amount){

@@ -28,7 +28,6 @@ import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 @RestController
-@CrossOrigin(origins = "http://localhost:4200", maxAge = 3600)
 @RequestMapping(value = "api/products/")
 public class ProductsController {
 

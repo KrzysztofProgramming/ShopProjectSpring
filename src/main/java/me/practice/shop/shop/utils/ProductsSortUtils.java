@@ -12,19 +12,27 @@ public class ProductsSortUtils {
 
     private ProductsSortUtils() {}
 
-    public static Sort getSort(String name){
-        if(name==null) return Sort.unsorted();
+    public static String getSortString(String name){
+        if(name==null) return " ORDER BY b.book_id ASC";
         return switch (name) {
-            case PRICE_ASC -> Sort.by(Sort.Direction.ASC, "price");
-            case PRICE_DESC -> Sort.by(Sort.Direction.DESC, "price");
-            case ALPHABETIC_ASC -> Sort.by(Sort.Direction.ASC, "name");
-            case ALPHABETIC_DESC -> Sort.by(Sort.Direction.DESC, "name");
-            default -> Sort.unsorted();
+            case PRICE_ASC -> " ORDER BY b.price ASC";
+            case PRICE_DESC -> " ORDER BY b.price DESC";
+            case ALPHABETIC_ASC -> " ORDER BY b.name ASC";
+            case ALPHABETIC_DESC -> " ORDER BY b.name DESC";
+            case ID_DESC -> " ORDER BY b.book_id DESC";
+            default -> " ORDER BY b.book_id ASC";
         };
     }
 
-    public static boolean isEmpty(String sortName){
-        return getSort(sortName).equals(Sort.unsorted());
+    public static Sort getSort(String name){
+        if(name==null) return Sort.by("id").ascending();
+        return switch (name) {
+            case PRICE_ASC -> Sort.by("price").ascending();
+            case PRICE_DESC -> Sort.by("price").descending();
+            case ALPHABETIC_ASC -> Sort.by("name").ascending();
+            case ALPHABETIC_DESC -> Sort.by("name").descending();
+            case ID_DESC -> Sort.by("id").descending();
+            default -> Sort.by("id").ascending();
+        };
     }
-
 }

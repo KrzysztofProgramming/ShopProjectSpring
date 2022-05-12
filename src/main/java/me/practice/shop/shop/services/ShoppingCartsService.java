@@ -1,7 +1,9 @@
 package me.practice.shop.shop.services;
 
 import lombok.Getter;
+import me.practice.shop.shop.database.products.ProductsRepository;
 import me.practice.shop.shop.database.shoppingCarts.ShoppingCartsRepository;
+import me.practice.shop.shop.models.BookProduct;
 import me.practice.shop.shop.models.ShoppingCart;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -10,6 +12,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @Service
@@ -22,6 +25,8 @@ public class ShoppingCartsService {
     @Value("${application.cart.productsLimit}")
     private long productsLimit;
 
+    @Autowired
+    private ProductsRepository productsRepository;
 
     @Autowired
     private ShoppingCartsRepository cartsRepository;
@@ -37,6 +42,10 @@ public class ShoppingCartsService {
 
     public ShoppingCart renewCart(ShoppingCart cart){
         cart.setExpireDate(calcExpirationTime());
+        List<Long> archivedProducts = this.productsRepository
+                .getByIdsAndArchive(cart.getItems().keySet(), true)
+                .stream().map(BookProduct::getId).toList();
+        cart.getItems().keySet().removeIf(archivedProducts::contains);
         this.cartsRepository.save(cart);
         return cart;
     }

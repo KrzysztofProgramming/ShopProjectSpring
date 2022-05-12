@@ -1,5 +1,6 @@
 package me.practice.shop.shop.database.products;
 
+import lombok.Data;
 import me.practice.shop.shop.controllers.products.models.GetProductsParams;
 import me.practice.shop.shop.database.ParamsApplicator;
 import me.practice.shop.shop.models.BookProduct;
@@ -8,6 +9,7 @@ import org.apache.logging.log4j.util.Strings;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.support.PageableExecutionUtils;
 import org.springframework.stereotype.Component;
 
 import javax.persistence.EntityManager;
@@ -16,7 +18,6 @@ import javax.transaction.Transactional;
 import java.math.BigInteger;
 import java.util.List;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 @SuppressWarnings("unused")
 @Component
@@ -57,7 +58,7 @@ public class ProductsSearcher {
     @Transactional
     @SuppressWarnings("unchecked")
     public Page<BookProduct> findByParams(GetProductsParams params) {
-        StringBuilder mainBuilder = new StringBuilder("SELECT b.book_id FROM ");
+        StringBuilder mainBuilder = new StringBuilder("SELECT b.book_id, COUNT(*) OVER() as total FROM ");
         if(Strings.isNotEmpty(params.getSearchPhrase()))
             mainBuilder.append(FULL_TEXT_QUERY);
         else
@@ -74,6 +75,8 @@ public class ProductsSearcher {
             mainBuilder.append(" AND b_a.author_id IN :authors");
         if(params.getTypes().size() > 0)
             mainBuilder.append(" AND b_t.type_id IN :types");
+        if(params.getIsArchived()==GetProductsParams.ALL_PRODUCTS)
+            params.setIsArchived(null);
         if(params.getIsArchived()!=null)
             mainBuilder.append(" AND b.is_archived = :archived");
         if(params.getMaxInStock()!=null)
@@ -84,17 +87,23 @@ public class ProductsSearcher {
             mainBuilder.append(" AND b.price <= :maxPrice");
         if(params.getMinPrice()!=null)
             mainBuilder.append(" AND b.price >= :minPrice");
-        mainBuilder.append(" GROUP BY b.book_id");
+        mainBuilder.append(" GROUP BY b.book_id, b.price, b.name");
+        mainBuilder.append(ProductsSortUtils.getSortString(params.getSort()));
 
         Query mainQuery = this.entityManager.createNativeQuery(mainBuilder.toString());
         this.applyParams(mainQuery, params);
+        if(params.getIsArchived()!=null)
+            mainQuery.setParameter("archived", params.getIsArchived() == GetProductsParams.ARCHIVED_PRODUCTS);
         mainQuery.setFirstResult((params.getPageNumber() - 1) * params.getPageSize());
         mainQuery.setMaxResults((params.getPageSize()));
-        List<Long> result = ((Stream<BigInteger>) mainQuery.getResultList().stream()).map(BigInteger::longValue)
-                .collect(Collectors.toList());
-        return this.productsRepository.findAllByIds(result,
-                        PageRequest.of(params.getPageNumber() - 1, params.getPageSize())
-                                .withSort(ProductsSortUtils.getSort(params.getSort())));
+        List<SearchQueryResult> result = (List<SearchQueryResult>) mainQuery.getResultList().stream()
+                .map(SearchQueryResult::new).collect(Collectors.toList());
+        long totalCount = result.size() == 0 ? 0 : result.get(0).getTotal();
+        return PageableExecutionUtils.getPage(this.productsRepository.findAllByIds(
+                result.stream().map(SearchQueryResult::getId).collect(Collectors.toList()),
+                ProductsSortUtils.getSort(params.getSort())),
+                PageRequest.of(params.getPageNumber() - 1, params.getPageSize()),
+                ()->totalCount);
     }
 
     public Query applyParams(Query query, GetProductsParams params){
@@ -106,48 +115,17 @@ public class ProductsSearcher {
                 .applyParam("minStock", params.getMinInStock())
                 .applyParam("maxStock", params.getMaxInStock())
                 .applyParam("search", params.getSearchPhrase())
-                .applyParam("archived", params.getIsArchived())
                 .getQuery();
     }
+}
 
-//
-//    @Override
-//    public boolean allExistByIds(Collection<String> ids) {
-//        return this.mongoTemplate.count(Query.query(Criteria.where("id").in(ids)), BookProduct.class) == ids.size();
-//    }
-//
-//    @Override
-//    public BulkWriteResult decreaseProductsCounts(Map<String, Integer> productsCounts) {
-//        BulkOperations operation = this.mongoTemplate.bulkOps(BulkOperations.BulkMode.UNORDERED, BookProduct.class);
-//        productsCounts.forEach((key, value) -> operation.updateOne(Query.query(Criteria.where("id").is(key)),
-//                new Update().inc("inStock", -value)));
-//        return operation.execute();
-//    }
-//
-//    @Override
-//    public boolean allProductsAvailable(Map<String, Integer> amounts) {
-//        if(amounts.isEmpty()) return false;
-//        List<BookProduct> products= this.mongoTemplate.find(Query.query(Criteria.where("id").in(amounts.keySet())),
-//                BookProduct.class);
-//        return products.stream().allMatch(product->product.getInStock() >= amounts.get(product.getId()));
-//    }
-//
-//
-//    private Criteria generatePriceCriteria(GetProductsParams params){
-//        return maxMinCriteria("price", params.getMaxPrice(), params.getMinPrice());
-//    }
-//
-//    private Criteria generateAuthorsCriteria(GetProductsParams params){
-//        return params.getAuthorsNames().size() == 0 ? null :
-//                Criteria.where("authorsNames").elemMatch(new Criteria().in(params.getAuthorsNames()));
-//    }
-//
-//    private Criteria generateStockCriteria(GetProductsParams params){
-//        return maxMinCriteria("inStock", params.getMaxInStock(), params.getMinInStock());
-//    }
-//
-//    private Criteria generateTypesCriteria(GetProductsParams params){
-//        return params.getTypes().isEmpty() ? null :
-//                Criteria.where("types").elemMatch(new Criteria().in(params.getTypes()));
-//    }
+@Data
+class SearchQueryResult{
+    private long id;
+    private long total;
+    public SearchQueryResult(Object object){
+        Object[] row = (Object[]) object;
+        this.id = ((BigInteger) row[0]).longValue();
+        this.total = ((BigInteger) row[1]).longValue();
+    }
 }

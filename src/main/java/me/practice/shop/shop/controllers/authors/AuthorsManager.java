@@ -101,7 +101,6 @@ public class AuthorsManager {
         resultQuery.setMaxResults(params.getPageSize());
 
         long totalCount = ((BigInteger) counterQuery.getSingleResult()).longValue();
-        System.out.println(totalCount);
         return PageableExecutionUtils.getPage(resultQuery.getResultList(),
                 PageRequest.of(params.getPageNumber() - 1, params.getPageSize()),
                 ()->totalCount);

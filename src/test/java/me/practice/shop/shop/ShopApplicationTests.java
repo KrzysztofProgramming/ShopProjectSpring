@@ -13,7 +13,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import javax.persistence.EntityManager;
-import javax.transaction.Transactional;
+import java.lang.reflect.Field;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -103,7 +103,6 @@ class ShopApplicationTests {
 					.build();
 			types.add(type);
 		}
-		System.out.println(types);
 		this.typesRepository.saveAllAndFlush(types);
 	}
 
@@ -161,7 +160,16 @@ class ShopApplicationTests {
 
 
 	@Test
-	@Transactional
-	public void testSave(){
+	public void reflectiveTest(){
+		Object obj = ShopUser.builder().build();
+		Class<?> c = obj.getClass();
+		try {
+			Field field = c.getDeclaredField("username");
+			field.setAccessible(true);
+			field.set(obj, "elo");
+		} catch (ReflectiveOperationException e) {
+			throw new RuntimeException(e);
+		}
+		System.out.println(obj);
 	}
 }
