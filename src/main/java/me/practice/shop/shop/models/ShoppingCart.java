@@ -38,7 +38,10 @@ public class ShoppingCart {
     @MapKeyColumn(name = "product_id")
     @Column(name = "product_count")
     private Map<Long, Integer> items;
+    @Column(columnDefinition = "TIMESTAMP WITH TIME ZONE")
+    @Temporal(TemporalType.TIMESTAMP)
     private Date expireDate;
+
 
     public ShoppingCart(String ownerUsername, Map<Long, Integer> items, Date expireDate) {
         this.ownerUsername = ownerUsername;

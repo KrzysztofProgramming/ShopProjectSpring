@@ -97,7 +97,7 @@ public class ProductsSearcher {
         mainQuery.setFirstResult((params.getPageNumber() - 1) * params.getPageSize());
         mainQuery.setMaxResults((params.getPageSize()));
         List<SearchQueryResult> result = (List<SearchQueryResult>) mainQuery.getResultList().stream()
-                .map(SearchQueryResult::new).collect(Collectors.toList());
+                .map(SearchQueryResult::new).toList();
         long totalCount = result.size() == 0 ? 0 : result.get(0).getTotal();
         return PageableExecutionUtils.getPage(this.productsRepository.findAllByIds(
                 result.stream().map(SearchQueryResult::getId).collect(Collectors.toList()),

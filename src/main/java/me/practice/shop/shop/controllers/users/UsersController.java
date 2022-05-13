@@ -10,6 +10,7 @@ import me.practice.shop.shop.controllers.users.models.users.GetUsersParams;
 import me.practice.shop.shop.controllers.users.models.users.UserRequest;
 import me.practice.shop.shop.controllers.users.models.users.UserResponse;
 import me.practice.shop.shop.database.orders.OrdersRepository;
+import me.practice.shop.shop.database.orders.OrdersSearcher;
 import me.practice.shop.shop.database.products.ProductsRepository;
 import me.practice.shop.shop.database.shoppingCarts.ShoppingCartsRepository;
 import me.practice.shop.shop.database.users.UsersRepository;
@@ -58,6 +59,9 @@ public class UsersController {
 
     @Autowired
     private OrdersRepository ordersRepository;
+
+    @Autowired
+    private OrdersSearcher ordersSearcher;
 
     @PreAuthorize("hasAuthority('users:read')")
     @GetMapping(value = "byUsername/{id}")
@@ -166,8 +170,7 @@ public class UsersController {
     @GetMapping("profile/orders")
     public ResponseEntity<?> getUserOrders(@Valid GetOrdersParams params){
         return this.functions.ifUserLoggedIn(user ->{
-//            return ResponseEntity.ok(new GetByParamsResponse<>())
-            Page<ShopOrder> page = this.ordersRepository.getByParams(params, user.getUsername());
+            Page<ShopOrder> page = this.ordersSearcher.getByParams(params, user.getUsername());
             return ResponseEntity.ok(new GetByParamsResponse<>(
                     page.getNumber() + 1, page.getTotalPages(), page.getTotalElements(), page.getContent()));
         });
