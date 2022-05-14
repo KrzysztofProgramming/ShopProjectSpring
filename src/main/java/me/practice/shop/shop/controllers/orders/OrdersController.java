@@ -50,10 +50,10 @@ public class OrdersController {
             return ResponseEntity.badRequest().body(new ErrorResponse("Dokończ płatność poprzedniego zamówienia"));
         List<BookProduct> products = this.productsRepository.findAllById(request.getProducts().keySet());
         if(products.size() < request.getProducts().size()){
-            return ResponseEntity.badRequest().body("Nie wszystkie produkty istnieją");
+            return ResponseEntity.badRequest().body(new ErrorResponse("Nie wszystkie produkty istnieją"));
         }
         if(!areProductsAvailable(request, products)){
-            return ResponseEntity.badRequest().body("Nie wszystkie produkty są dostępne");
+            return ResponseEntity.badRequest().body(new ErrorResponse("Nie wszystkie produkty są dostępne"));
         }
         Optional<ShopUser> user = this.functionsService.getUserIfLoggedIn();
         ShopOrder order = fromRequest(request, products, user.isEmpty() ? null : user.get().getUsername());
