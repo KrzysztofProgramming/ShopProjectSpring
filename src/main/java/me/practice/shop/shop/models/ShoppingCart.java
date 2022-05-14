@@ -45,7 +45,7 @@ public class ShoppingCart {
 
     public ShoppingCart(String ownerUsername, Map<Long, Integer> items, Date expireDate) {
         this.ownerUsername = ownerUsername;
-        this.owner = ShopUser.builder().username(ownerUsername).build();
+        this.owner = ownerUsername == null ? null : ShopUser.builder().username(ownerUsername).build();
         this.items = items;
         this.expireDate = expireDate;
     }

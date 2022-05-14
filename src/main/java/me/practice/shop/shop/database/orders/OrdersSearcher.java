@@ -22,8 +22,8 @@ public class OrdersSearcher {
     private EntityManager entityManager;
 
     public Page<ShopOrder> getByParams(GetOrdersParams params, String ownerUsername){
-        StringBuilder mainBuilder = new StringBuilder("SELECT o FROM ShopOrder o WHERE 1=1");
-        StringBuilder countBuilder = new StringBuilder("SELECT COUNT(o) FROM ShopOrder o WHERE 1=1");
+        StringBuilder mainBuilder = new StringBuilder("SELECT o FROM ShopOrder o WHERE o.ownerUsername = :owner");
+        StringBuilder countBuilder = new StringBuilder("SELECT COUNT(o) FROM ShopOrder o WHERE o.ownerUsername = :owner");
         List<StringBuilder> builders = List.of(mainBuilder, countBuilder);
         if(params.getMaxPrice()!=null)
             builders.forEach(builder->builder.append(" AND o.totalPrice <= :maxPrice"));
@@ -47,7 +47,8 @@ public class OrdersSearcher {
                 .applyParam("minPrice", params.getMinPrice())
                 .applyParam("maxDate", params.getMaxDate())
                 .applyParam("minDate", params.getMinDate())
-                .applyParam("status", params.getStatus()));
+                .applyParam("status", params.getStatus())
+                .applyParam("owner", ownerUsername));
 
        List<ShopOrder> orders = orderQuery.getResultList();
        long totalCount = (long) countQuery.getSingleResult();

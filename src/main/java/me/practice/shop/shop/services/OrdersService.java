@@ -59,7 +59,7 @@ public class OrdersService {
 
 
     public boolean payOrder(Long id){
-       return this.ordersRepository.changeStatus(id, ShopOrder.PAID) > 0;
+       return this.ordersRepository.changeStatus(id, ShopOrder.PAID, ShopOrder.UNPAID) > 0;
     }
 
     public boolean hasUnpaidOrder(String email){

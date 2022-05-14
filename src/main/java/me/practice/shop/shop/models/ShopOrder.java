@@ -54,6 +54,8 @@ public class ShopOrder {
     @MapKeyColumn(name = "product_id")
     @Column(name = "product_count")
     private Map<Long, Integer> productsIds;
+    @Column(columnDefinition = "TIMESTAMP WITH TIME ZONE")
+    @Temporal(TemporalType.TIMESTAMP)
     private Date issuedDate;
     private Double totalPrice;
     private Integer status;
@@ -70,7 +72,7 @@ public class ShopOrder {
 
     public ShopOrder(String ownerUsername, String email, UserInfo info, Map<Long, Integer> productsIds, Date issuedDate, Double totalPrice, Integer status) {
         this.ownerUsername = ownerUsername;
-        this.owner = ShopUser.builder().username(ownerUsername).build();
+        this.owner = ownerUsername==null ? null : ShopUser.builder().username(ownerUsername).build();
         this.email = email;
         this.info = info;
         this.productsIds = productsIds;

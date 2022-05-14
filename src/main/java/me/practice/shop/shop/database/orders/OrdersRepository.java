@@ -22,8 +22,8 @@ public interface OrdersRepository extends JpaRepository<ShopOrder, Long> {
 
     @Modifying(flushAutomatically = true, clearAutomatically = true)
     @Transactional
-    @Query(value = "UPDATE #{#entityName} o SET o.status = ?2 WHERE o.id = ?1")
-    int changeStatus(Long id, Integer newStatus);
+    @Query(value = "UPDATE #{#entityName} o SET o.status = ?2 WHERE o.id = ?1 AND o.status = ?3")
+    int changeStatus(Long id, Integer newStatus, Integer oldStatus);
 
     @Query(value = "SELECT COUNT(o) FROM #{#entityName} o WHERE o.email=?1 AND o.status=?2")
     int countOrders(String email, Integer status);
