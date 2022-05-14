@@ -20,6 +20,7 @@ import me.practice.shop.shop.services.FunctionsService;
 import me.practice.shop.shop.services.ShoppingCartsService;
 import me.practice.shop.shop.services.UserDetailsServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -250,7 +251,10 @@ public class UsersController {
     @DeleteMapping("cart/deleteCart")
     public ResponseEntity<?> deleteCart(){
         return functions.ifUserLoggedIn(user->{
-            this.cartsRepository.deleteById(user.getUsername());
+            try {
+                this.cartsRepository.deleteById(user.getUsername());
+            }
+            catch (EmptyResultDataAccessException ignore){}
             return ResponseEntity.ok().build();
         });
     }

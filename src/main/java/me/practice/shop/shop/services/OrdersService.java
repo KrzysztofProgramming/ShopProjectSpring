@@ -66,14 +66,6 @@ public class OrdersService {
         return this.ordersRepository.countOrders(email, ShopOrder.UNPAID) > 0;
     }
 
-    public boolean cancelOrder(Long id){
-//        return this.mongoTemplate.updateFirst(Query.query(Criteria.where("id").is(id)
-//                .and("status").is(ShopOrder.UNPAID)), new Update().set("status", ShopOrder.CANCELLED),
-//                ShopOrder.class).getModifiedCount() > 0; TODO
-        return false;
-    }
-
-
     public OrderParams getOrderParams(List<OrderProductDetail> products){
         double sum = 0;
         int totalAmount = 0;

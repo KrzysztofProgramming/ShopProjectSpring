@@ -6,11 +6,16 @@ import me.practice.shop.shop.database.products.ProductsRepository;
 import me.practice.shop.shop.models.*;
 import me.practice.shop.shop.services.FunctionsService;
 import me.practice.shop.shop.services.OrdersService;
+import me.practice.shop.shop.services.ShoppingCartsService;
+import org.hibernate.Session;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import javax.persistence.EntityManager;
 import javax.validation.Valid;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -33,6 +38,12 @@ public class OrdersController {
     @Autowired
     private FunctionsService functionsService;
 
+    @Autowired
+    private ShoppingCartsService cartsService;
+
+    @Autowired
+    private EntityManager entityManager;
+
     @PostMapping("newOrder")
     public ResponseEntity<?> createNewOrder(@Valid @RequestBody NewOrderRequest request){
         if(this.ordersService.hasUnpaidOrder(request.getEmail()))
@@ -46,13 +57,15 @@ public class OrdersController {
         }
         Optional<ShopUser> user = this.functionsService.getUserIfLoggedIn();
         ShopOrder order = fromRequest(request, products, user.isEmpty() ? null : user.get().getUsername());
+        order = this.ordersRepository.save(order);
 
         if(!this.ordersService.sendEmail(order, products.stream().map(product->new OrderProductDetail(product,
                 request.getProducts().get(product.getId()))).collect(Collectors.toList()))){
+            this.ordersRepository.deleteById(order.getId());
             return ResponseEntity.badRequest().body(new ErrorResponse("Nie udało się wysłać emaila"));
         }
+        this.decrementProductsInStock(request);
 //        user.ifPresent(shopUser -> this.cartsService.clearUserCart(shopUser.getUsername()));
-        this.ordersRepository.save(order);
         return ResponseEntity.ok().body(order);
     }
 
@@ -60,12 +73,6 @@ public class OrdersController {
     public ResponseEntity<?> payOrder(@PathVariable Long id){
         return this.ordersService.payOrder(id) ? ResponseEntity.ok().build() :
                 ResponseEntity.badRequest().body(new ErrorResponse("Błąd przy płatności zamówienia"));
-    }
-
-    @PutMapping("cancelOrder/{id}")
-    public ResponseEntity<?> cancelOrder(@PathVariable Long id){
-        return this.ordersService.cancelOrder(id) ? ResponseEntity.ok().build() :
-                ResponseEntity.badRequest().body(new ErrorResponse("Nie udało się anulować zamówienia"));
     }
 
     private boolean areProductsAvailable(NewOrderRequest request, List<BookProduct> products){
@@ -90,5 +97,23 @@ public class OrdersController {
         return new ShopOrder(username, request.getEmail(), request.getInfo(),
                 request.getProducts(), new Date(), this.calcTotalPrice(products, request.getProducts()),
                 ShopOrder.UNPAID);
+    }
+
+    private void decrementProductsInStock(NewOrderRequest request){
+        Session session = this.entityManager.unwrap(Session.class);
+        session.doWork(connection -> {
+            PreparedStatement statement = connection.prepareStatement("UPDATE book_products_table" +
+                    " SET in_stock = in_stock - ? WHERE book_id = ?");
+            request.getProducts().forEach((key, value)->{
+                try {
+                    statement.setInt(1, value);
+                    statement.setLong(2, key);
+                    statement.addBatch();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+            });
+            statement.executeBatch();
+        });
     }
 }
