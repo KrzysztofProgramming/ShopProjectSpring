@@ -35,7 +35,7 @@ public interface AuthorsRepository extends JpaRepository<Author, Long> {
     @Query(value = "UPDATE #{#entityName} a SET a.name = ?2, a.description = ?3 WHERE a.id = ?1")
     int updateNameAndDescription(Long id, String name, String description);
 
-    @Query(value = "SELECT COUNT(a) FROM BookProduct b JOIN b.authors a GROUP BY a.id")
+    @Query(value = "SELECT COUNT(a) FROM BookProduct b JOIN b.authors a GROUP BY a.id HAVING a.id = ?1")
     long countAuthorBooks(Long authorId);
 
     @Query(value = "SELECT NEW me.practice.shop.shop.models.SimpleAuthor(a.id, a.name) " +

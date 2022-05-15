@@ -31,8 +31,7 @@ public class AdminUserInitialization {
 
     @PostConstruct
     private void createAdminUserIfNotExists(){
-        if(!(this.arguments.containsOption("create-admin") &&
-                this.arguments.getOptionValues("create-admin").get(0).equals("true")))
+        if(!this.arguments.containsOption("create-admin"))
             return;
         log.info("Checking for admin user creation");
         Optional<ShopUser> user = this.usersRepository.findById("admin");
