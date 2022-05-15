@@ -5,7 +5,7 @@ Project made with Spring boot and Hibernate compiled with jdk 17.
 **mvn install**
 
 ## Running an app
-command: **java -jar [jar_name] --create-admin=true**  
+command: **java -jar [jar_name] --create-admin**  
 --create-admin argument is not neccessary if we already have our admin user.
 
 PostgreSQL server running on localhost:5432 is required, username, password, database name etc. in application.properties.
