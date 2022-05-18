@@ -12,6 +12,7 @@ import me.practice.shop.shop.services.FunctionsService;
 import me.practice.shop.shop.utils.MediaTypeUtils;
 import org.hibernate.TransientObjectException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.data.domain.Page;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -114,7 +115,9 @@ public class ProductsController {
     @PreAuthorize("hasAuthority('products:write')")
     @DeleteMapping(value = "deleteType/{id}")
     public ResponseEntity<?> deleteType(@PathVariable Long id){
-        this.typesRepository.deleteById(id);
+        try {
+            this.typesRepository.deleteById(id);
+        }catch(EmptyResultDataAccessException ignore){}
         return ResponseEntity.ok().build();
     }
 
@@ -179,9 +182,8 @@ public class ProductsController {
         if (!MediaTypeUtils.isImageTypeOK(fileType)) {
             return ResponseEntity.badRequest().body(new ErrorResponse("Zły typ pliku"));
         }
-        productsImagesManager.saveAndScale(new DatabaseImage(new ImageIdentifier(productId, null),
-                fileType, file.getBytes()));
-        return ResponseEntity.ok().build();
+        return  productsImagesManager.saveAndScale(new DatabaseImage(new ImageIdentifier(productId, null),
+                fileType, file.getBytes())).isEmpty() ? ResponseEntity.internalServerError().build() : ResponseEntity.ok().build();
     }
 
 

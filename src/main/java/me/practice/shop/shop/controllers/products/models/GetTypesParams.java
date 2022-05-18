@@ -6,6 +6,7 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import me.practice.shop.shop.models.PageableParams;
 
+import javax.validation.constraints.NotNull;
 import javax.validation.constraints.PositiveOrZero;
 
 @EqualsAndHashCode(callSuper = true)
@@ -18,4 +19,6 @@ public class GetTypesParams extends PageableParams {
     private Integer maxBooks = null;
     @PositiveOrZero
     private Integer minBooks = null;
+    @NotNull
+    private String sort = "";
 }

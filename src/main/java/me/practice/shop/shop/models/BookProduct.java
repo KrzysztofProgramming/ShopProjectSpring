@@ -48,16 +48,20 @@ public class BookProduct {
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
             name = "books_authors",
-            joinColumns = @JoinColumn(name = "book_id"),
-            inverseJoinColumns = @JoinColumn(name = "author_id")
+            joinColumns = @JoinColumn(name = "book_id", foreignKey = @ForeignKey(foreignKeyDefinition =
+                    "FOREIGN KEY (book_id) REFERENCES book_products_table (book_id) ON DELETE CASCADE")),
+            inverseJoinColumns = @JoinColumn(name = "author_id", foreignKey = @ForeignKey(foreignKeyDefinition =
+                    "FOREIGN KEY (author_id) REFERENCES authors_table (author_id) ON DELETE CASCADE"))
     )
     private Set<Author> authors;
 
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
             name = "books_types",
-            joinColumns = @JoinColumn(name = "book_id"),
-            inverseJoinColumns = @JoinColumn(name = "type_id")
+            joinColumns = @JoinColumn(name = "book_id", foreignKey = @ForeignKey(foreignKeyDefinition =
+                    "FOREIGN KEY (book_id) REFERENCES book_products_table (book_id) ON DELETE CASCADE")),
+            inverseJoinColumns = @JoinColumn(name = "type_id", foreignKey = @ForeignKey(foreignKeyDefinition =
+                    "FOREIGN KEY (type_id) REFERENCES types_table (type_id) ON DELETE CASCADE"))
     )
     private Set<CommonType> types;
 

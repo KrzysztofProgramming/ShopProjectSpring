@@ -7,6 +7,7 @@ import me.practice.shop.shop.database.products.ProductsRepository;
 import me.practice.shop.shop.database.products.types.CommonTypesRepository;
 import me.practice.shop.shop.models.CommonType;
 import me.practice.shop.shop.models.ErrorResponse;
+import me.practice.shop.shop.utils.TypesSortUtils;
 import org.apache.logging.log4j.util.Strings;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -95,7 +96,7 @@ public class TypesManager {
             builders.forEach(builder -> builder.append(" AND COUNT(t) >= :minBooks"));
         if(Strings.isNotEmpty(params.getSearchPhrase()))
             builders.forEach(builder -> builder.append(" AND LOWER(t.name) LIKE :phrase"));
-        queryBuilder.append(" ORDER BY t.name");
+        queryBuilder.append(TypesSortUtils.getSort(params.getSort()));
         counterBuilder.append(") t");
 
         TypedQuery<TypeDetailsResponse> resultQuery = this.entityManager.createQuery(queryBuilder.toString(),
@@ -112,10 +113,9 @@ public class TypesManager {
         resultQuery.setFirstResult((params.getPageNumber() - 1) * params.getPageSize());
         resultQuery.setMaxResults(params.getPageSize());
 
-        long totalCount = ((BigInteger) counterQuery.getSingleResult()).longValue();
         return PageableExecutionUtils.getPage(resultQuery.getResultList(),
                 PageRequest.of(params.getPageNumber() - 1, params.getPageSize()),
-                ()->totalCount);
+                ()->((BigInteger) counterQuery.getSingleResult()).longValue());
     }
 
 }

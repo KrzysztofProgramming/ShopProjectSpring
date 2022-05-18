@@ -12,6 +12,7 @@ import me.practice.shop.shop.models.ErrorResponse;
 import me.practice.shop.shop.utils.AuthorsSortUtils;
 import org.apache.logging.log4j.util.Strings;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.support.PageableExecutionUtils;
@@ -53,10 +54,10 @@ public class AuthorsManager {
 
 
     public ResponseEntity<?> deleteAuthor(Long id){
-       if(this.productsRepository.countByAuthor(id) > 0){
-            return ResponseEntity.badRequest().body("Niektóre produkty korzystają z tego autora, zmień to przed usunięciem go");
-       }
-       this.authorsRepository.deleteById(id);
+        try {
+            this.authorsRepository.deleteById(id);
+        }
+        catch(EmptyResultDataAccessException ignore){}
        return ResponseEntity.ok().build();
     }
 

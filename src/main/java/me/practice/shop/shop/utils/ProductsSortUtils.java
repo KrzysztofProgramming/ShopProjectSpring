@@ -9,6 +9,8 @@ public class ProductsSortUtils {
     public static final String ALPHABETIC_DESC = "alphabetic_desc";
     public static final String ID_ASC = "id_asc";
     public static final String ID_DESC = "id_desc";
+    public static final String IN_STOCK_ASC = "in_stock_asc";
+    public static final String IN_STOCK_DESC = "in_stock_desc";
 
     private ProductsSortUtils() {}
 
@@ -20,6 +22,8 @@ public class ProductsSortUtils {
             case ALPHABETIC_ASC -> " ORDER BY b.name ASC";
             case ALPHABETIC_DESC -> " ORDER BY b.name DESC";
             case ID_DESC -> " ORDER BY b.book_id DESC";
+            case IN_STOCK_ASC ->  " ORDER BY b.in_stock ASC";
+            case IN_STOCK_DESC -> " ORDER BY b.in_stock DESC";
             default -> " ORDER BY b.book_id ASC";
         };
     }
@@ -31,6 +35,8 @@ public class ProductsSortUtils {
             case PRICE_DESC -> Sort.by("price").descending();
             case ALPHABETIC_ASC -> Sort.by("name").ascending();
             case ALPHABETIC_DESC -> Sort.by("name").descending();
+            case IN_STOCK_ASC -> Sort.by("inStock").ascending();
+            case IN_STOCK_DESC -> Sort.by("inStock").descending();
             case ID_DESC -> Sort.by("id").descending();
             default -> Sort.by("id").ascending();
         };

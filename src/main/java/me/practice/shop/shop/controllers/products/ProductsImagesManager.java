@@ -119,11 +119,14 @@ public class ProductsImagesManager {
     public Optional<DatabaseImage> saveAndScale(DatabaseImage image){
 
         try {
-            JpegImageMetadata metadata = (JpegImageMetadata) Imaging.getMetadata(image.getImage());
-            TiffImageMetadata imgMeta = null;
-            if(metadata !=null) imgMeta = metadata.getExif();
             TiffOutputSet exifSet = null;
-            if(imgMeta != null) exifSet = imgMeta.getOutputSet();
+            try {
+                JpegImageMetadata metadata = (JpegImageMetadata) Imaging.getMetadata(image.getImage());
+                TiffImageMetadata imgMeta = null;
+                if (metadata != null) imgMeta = metadata.getExif();
+                if (imgMeta != null) exifSet = imgMeta.getOutputSet();
+            }
+            catch (ClassCastException ignore){}
 
             BufferedImage buffImg = ImageIO.read(new ByteArrayInputStream(image.getImage()));
             this.saveAndScaleSmallImage(image, buffImg, exifSet);
@@ -131,8 +134,8 @@ public class ProductsImagesManager {
             image.setImage(GzipUtils.compress(image.getImage()));
             image.getId().setImageSize(ImageSize.ORIGINAL);
             return Optional.of(this.imagesRepository.save(image));
-        } catch (IOException | ImageReadException | ClassCastException | ImageWriteException e) {
-//            e.printStackTrace();
+        } catch (IOException | ImageReadException | ImageWriteException e) {
+            e.printStackTrace();
             return Optional.empty();
         }
     }

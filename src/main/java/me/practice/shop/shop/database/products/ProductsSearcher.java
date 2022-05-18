@@ -87,7 +87,7 @@ public class ProductsSearcher {
             mainBuilder.append(" AND b.price <= :maxPrice");
         if(params.getMinPrice()!=null)
             mainBuilder.append(" AND b.price >= :minPrice");
-        mainBuilder.append(" GROUP BY b.book_id, b.price, b.name");
+        mainBuilder.append(" GROUP BY b.book_id, b.price, b.name, b.in_stock");
         mainBuilder.append(ProductsSortUtils.getSortString(params.getSort()));
 
         Query mainQuery = this.entityManager.createNativeQuery(mainBuilder.toString());
