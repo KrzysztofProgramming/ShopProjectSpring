@@ -1,6 +1,9 @@
 # ShopProjectSpring
 Project made with Spring boot and Hibernate compiled with jdk 17.
 
+## Youtube showcase
+https://youtu.be/Z7p6BJtAbe4
+
 ## Compiling
 **mvn install**
 
