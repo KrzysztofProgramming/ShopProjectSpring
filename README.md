@@ -1,6 +1,9 @@
 # ShopProjectSpring
 Project made with Spring boot and Hibernate compiled with jdk 17.
 
+## Frontend code available here
+https://github.com/KrzysztofProgramming/ShopProjectAngular
+
 ## Youtube showcase
 https://youtu.be/Z7p6BJtAbe4
 
